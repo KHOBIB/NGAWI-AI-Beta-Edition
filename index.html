@@ -1,0 +1,729 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>NGAWI AI</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- ═══ BACKGROUND ═══ -->
+    <div class="bg-canvas">
+      <div class="bg-orb bg-orb-1"></div>
+      <div class="bg-orb bg-orb-2"></div>
+      <div class="bg-orb bg-orb-3"></div>
+      <div class="bg-orb bg-orb-4"></div>
+    </div>
+    <div class="bg-grid"></div>
+    <div class="bg-scanlines"></div>
+
+    <!-- PIXEL DECOS -->
+    <svg
+      class="pixel-deco pixel-deco-1"
+      width="48"
+      height="48"
+      viewBox="0 0 48 48"
+    >
+      <rect x="8" y="0" width="8" height="8" fill="#a78bff" />
+      <rect x="16" y="8" width="8" height="8" fill="#67e8f9" />
+      <rect x="0" y="16" width="8" height="8" fill="#f472b6" />
+      <rect x="24" y="16" width="8" height="8" fill="#a78bff" />
+      <rect x="8" y="24" width="8" height="8" fill="#67e8f9" />
+    </svg>
+    <svg
+      class="pixel-deco pixel-deco-2"
+      width="56"
+      height="56"
+      viewBox="0 0 56 56"
+    >
+      <rect x="0" y="8" width="8" height="8" fill="#67e8f9" />
+      <rect x="16" y="0" width="8" height="8" fill="#a78bff" />
+      <rect x="8" y="16" width="8" height="8" fill="#f472b6" />
+      <rect x="24" y="8" width="8" height="8" fill="#67e8f9" />
+      <rect x="0" y="24" width="8" height="8" fill="#a78bff" />
+      <rect x="16" y="24" width="8" height="8" fill="#f472b6" />
+    </svg>
+
+    <div id="themeOverlay" class="theme-overlay"></div>
+
+    <!-- ═══ ALERT ═══ -->
+    <div id="alert">
+      <span class="material-symbols-rounded" id="alertIcon">info</span>
+      <span id="alertMsg"></span>
+    </div>
+
+    <!-- ═══ FUN TOAST ═══ -->
+    <div class="fun-toast" id="funToast">
+      <span class="toast-emoji" id="toastEmoji">💬</span>
+      <span id="toastMsg">Halo!</span>
+    </div>
+
+    <!-- ═══ HEADER ═══ -->
+    <header>
+      <!-- Pixel character animation canvas -->
+      <canvas id="headerCharCanvas" class="header-char-canvas"></canvas>
+
+      <div class="logo-pill">
+        <div class="logo-dot">N</div>
+        <div class="logo-text-wrap">
+          <span class="logo-text">NGAWI AI</span>
+        </div>
+      </div>
+
+      <div class="header-music-mini" id="headerMusicMini">
+        <div class="mini-vis-bars">
+          <div class="mini-vis-bar"></div>
+          <div class="mini-vis-bar"></div>
+          <div class="mini-vis-bar"></div>
+        </div>
+        <div class="mini-song-name" id="miniSongName">—</div>
+      </div>
+
+      <div class="header-actions">
+        <button
+          class="icon-btn desktop-only"
+          onclick="window.smoothThemeSwitch()"
+          id="themeBtn"
+          title="Ganti Tema"
+        >
+          <span class="material-symbols-rounded">light_mode</span>
+        </button>
+        <button
+          class="icon-btn desktop-only"
+          onclick="window.openGame()"
+          title="Mini Game"
+          id="gameBtn"
+        >
+          <span class="material-symbols-rounded">sports_esports</span>
+        </button>
+        <button
+          class="icon-btn desktop-only"
+          onclick="window.clearChat()"
+          title="Reset Chat"
+        >
+          <span class="material-symbols-rounded">refresh</span>
+        </button>
+        <button
+          class="icon-btn desktop-only"
+          id="musicToggleBtn"
+          onclick="window.toggleMusicPanel()"
+          title="Music Player"
+        >
+          <span class="material-symbols-rounded">music_note</span>
+        </button>
+        <div id="profileTrigger">
+          <button class="icon-btn" onclick="window.toggleSidebar()">
+            <span class="material-symbols-rounded" style="font-size: 26px"
+              >account_circle</span
+            >
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══ CHAT ═══ -->
+    <div id="chatBox">
+      <div id="welcome">
+        <div class="welcome-orb-wrap">
+          <div class="pixel-corner tl"></div>
+          <div class="pixel-corner tr"></div>
+          <div class="pixel-corner bl"></div>
+          <div class="pixel-corner br"></div>
+          <div class="welcome-icon">
+            <canvas
+              id="catWelcomeCanvas"
+              width="90"
+              height="90"
+              style="display: block; border-radius: 22px"
+            ></canvas>
+          </div>
+        </div>
+        <h2 id="welcomeText">Halo User Tercinta</h2>
+        <p class="welcome-sub">NGAWI AI siap tempur. Apapun gw jabanin</p>
+        <div class="pixel-status">ONLINE · READY</div>
+        <div class="chips-grid">
+          <div class="chip" onclick="useChip(this)">
+            <span class="chip-icon">🧠</span
+            ><span class="chip-text">Jelasin konsep AI</span>
+          </div>
+          <div class="chip" onclick="useChip(this)">
+            <span class="chip-icon">📸</span
+            ><span class="chip-text">Caption Instagram</span>
+          </div>
+          <div class="chip" onclick="useChip(this)">
+            <span class="chip-icon">🐛</span
+            ><span class="chip-text">Bantu debug kode</span>
+          </div>
+          <div class="chip" onclick="useChip(this)">
+            <span class="chip-icon">🎬</span
+            ><span class="chip-text">Rekomendasiin film</span>
+          </div>
+          <div class="chip" onclick="useChip(this)">
+            <span class="chip-icon">✍️</span
+            ><span class="chip-text">Bikinin puisi buat doi</span>
+          </div>
+          <div class="chip" onclick="useChip(this)">
+            <span class="chip-icon">🎵</span
+            ><span class="chip-text">Rekomendasiin lagu</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ INPUT ═══ -->
+    <div class="bottom">
+      <div class="input-wrap" id="inputWrap">
+        <div class="input-ph" id="inputPh">Tanya NGAWI AI</div>
+        <textarea
+          id="uIn"
+          rows="1"
+          onkeydown="
+            if (event.key === 'Enter' && !event.shiftKey) {
+              event.preventDefault();
+              askAI();
+            }
+          "
+          oninput="
+            autoResizeTA(this);
+            updatePlaceholder();
+          "
+          onfocus="updatePlaceholder()"
+          onblur="updatePlaceholder()"
+        ></textarea>
+        <div class="input-actions">
+          <button class="send-btn" onclick="askAI()" id="sendBtn" title="Kirim">
+            <span class="material-symbols-rounded">arrow_upward</span>
+          </button>
+        </div>
+      </div>
+      <div class="input-hint">
+        Enter untuk kirim · Shift+Enter untuk baris baru
+      </div>
+    </div>
+
+    <!-- ═══ MUSIC PANEL ═══ -->
+    <div id="musicPanel">
+      <div class="music-panel-handle" onclick="window.toggleMusicPanel()"></div>
+      <div class="music-panel-header">
+        <div class="music-panel-title">🎵 MUSIC PLAYER</div>
+        <button
+          class="icon-btn"
+          onclick="window.toggleMusicPanel()"
+          style="width: 32px; height: 32px"
+        >
+          <span class="material-symbols-rounded" style="font-size: 18px"
+            >keyboard_arrow_down</span
+          >
+        </button>
+      </div>
+      <div class="visualizer-wrap">
+        <canvas id="visualizerCanvas"></canvas>
+      </div>
+      <div class="music-info-row">
+        <div class="album-art" id="albumArt">🎵</div>
+        <div class="music-text">
+          <div class="music-title" id="musicTitle">Pilih musik dulu Rek!</div>
+          <div class="music-artist" id="musicArtist">— · —</div>
+        </div>
+        <div class="music-track-count" id="trackCount">0/0</div>
+      </div>
+      <div class="music-progress-wrap">
+        <div
+          class="progress-bar-wrap"
+          id="progressWrap"
+          onclick="window.seekAudio(event)"
+        >
+          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+        </div>
+        <div class="time-row">
+          <span id="currentTime">0:00</span>
+          <span id="totalTime">0:00</span>
+        </div>
+      </div>
+      <div class="music-controls">
+        <button
+          class="ctrl-btn"
+          id="shuffleBtn"
+          onclick="window.shuffleTrack()"
+          title="Shuffle"
+        >
+          <span class="material-symbols-rounded">shuffle</span>
+        </button>
+        <button class="ctrl-btn" onclick="window.prevTrack()" title="Previous">
+          <span class="material-symbols-rounded">skip_previous</span>
+        </button>
+        <button
+          class="ctrl-btn play-pause"
+          id="playPauseBtn"
+          onclick="window.togglePlay()"
+          title="Play/Pause"
+        >
+          <span class="material-symbols-rounded">play_arrow</span>
+        </button>
+        <button class="ctrl-btn" onclick="window.nextTrack()" title="Next">
+          <span class="material-symbols-rounded">skip_next</span>
+        </button>
+        <button
+          class="ctrl-btn"
+          id="repeatBtn"
+          onclick="window.toggleRepeat()"
+          title="Repeat"
+        >
+          <span class="material-symbols-rounded">repeat</span>
+        </button>
+      </div>
+      <div class="volume-row">
+        <span class="material-symbols-rounded" id="volIcon">volume_up</span>
+        <input
+          type="range"
+          class="vol-slider"
+          id="volSlider"
+          min="0"
+          max="1"
+          step="0.01"
+          value="0.8"
+          oninput="window.setVolume(this.value)"
+        />
+      </div>
+      <div class="playlist-section">
+        <div class="playlist-header">
+          <div class="playlist-title">Playlist</div>
+          <button
+            class="add-music-btn"
+            onclick="document.getElementById('musicFileInput').click()"
+          >
+            <span class="material-symbols-rounded">add</span>Tambah Musik
+          </button>
+        </div>
+        <div id="playlistContainer">
+          <div class="playlist-empty">
+            <span class="playlist-empty-icon">🎧</span>
+            Belum ada musik nih Rek!<br />Tambahin dari storage lu dulu
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <input
+      type="file"
+      id="musicFileInput"
+      accept="audio/*"
+      multiple
+      style="display: none"
+      onchange="window.addMusicFiles(this.files)"
+    />
+
+    <!-- ═══ MINI GAME MODAL ═══ -->
+    <div id="gameModal" class="modal">
+      <div class="modal-box game-modal-box">
+        <div class="game-header">
+          <div class="game-title">⚔️ PIXEL DASH</div>
+          <button class="icon-btn game-close-btn" onclick="window.closeGame()">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
+        <div class="game-score-row">
+          <div class="game-score-item">
+            <div class="game-score-label">SCORE</div>
+            <div class="game-score-val" id="gameScore">0</div>
+          </div>
+          <div class="game-score-item">
+            <div class="game-score-label">BEST</div>
+            <div class="game-score-val" id="gameBest">0</div>
+          </div>
+          <div class="game-score-item">
+            <div class="game-score-label">LIVES</div>
+            <div class="game-score-val" id="gameLives">❤️❤️❤️</div>
+          </div>
+        </div>
+        <div class="game-canvas-wrap">
+          <canvas id="gameCanvas"></canvas>
+          <div class="game-overlay" id="gameOverlay">
+            <div class="game-overlay-icon">🎮</div>
+            <div class="game-overlay-title" id="gameOverlayTitle">
+              PIXEL DASH
+            </div>
+            <div class="game-overlay-sub" id="gameOverlaySub">
+              Tekan SPACE atau TAP untuk mulai!
+            </div>
+            <button
+              class="game-start-btn"
+              id="gameStartBtn"
+              onclick="window.startGame()"
+            >
+              ▶ MULAI
+            </button>
+          </div>
+        </div>
+        <div class="game-controls-hint">
+          <span>⌨️ SPACE / ↑ = Lompat</span>
+          <span>📱 TAP = Lompat</span>
+          <span>🔄 Double Jump!</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <div id="sideOverlay" onclick="window.closeSidebar()"></div>
+    <div id="profileSidebar">
+      <!-- Guest Header (not logged in) -->
+      <div id="sideHeaderGuest" class="side-header-guest">
+        <span class="side-cat-avatar">😹</span>
+        <div id="sideGuestName">Halo User Tercinta</div>
+        <div id="sideGuestSub">Login dulu buat fitur lengkap</div>
+      </div>
+
+      <!-- User Header (logged in) -->
+      <div id="sideHeaderUser" class="side-header" style="display: none">
+        <img
+          id="sideAvatar"
+          src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+          style="border-radius: 20px"
+        />
+        <div id="sideName">User Ngawi</div>
+        <div id="sideEmail">user@ngawi.ai</div>
+        <div
+          class="pixel-status"
+          style="margin-top: 10px; justify-content: center"
+        >
+          VERIFIED
+        </div>
+      </div>
+
+      <div class="side-menu">
+        <!-- Login Button (guest only) -->
+        <div id="sideMenuGuest">
+          <div
+            class="sidebar-item sidebar-login-btn"
+            onclick="
+              window.closeSidebar();
+              window.openAuth('login');
+            "
+          >
+            <span class="material-symbols-rounded">login</span
+            ><span>Login / Daftar</span>
+          </div>
+          <div class="sidebar-divider"></div>
+        </div>
+
+        <!-- User-only menu items -->
+        <div id="sideMenuUser" style="display: none">
+          <div class="sidebar-item" onclick="window.openEditProfile()">
+            <span class="material-symbols-rounded">manage_accounts</span
+            ><span>Edit Profil</span>
+          </div>
+          <div class="sidebar-item" onclick="window.viewReset()">
+            <span class="material-symbols-rounded">lock_reset</span
+            ><span>Ganti Password</span>
+          </div>
+          <div class="sidebar-divider"></div>
+        </div>
+
+        <!-- Shared menu items (all users, mobile-visible) -->
+        <div
+          class="sidebar-item mobile-sidebar-item"
+          onclick="
+            window.smoothThemeSwitch();
+            window.closeSidebar();
+          "
+        >
+          <span class="material-symbols-rounded" id="sideThemeIcon"
+            >light_mode</span
+          ><span>Ganti Tema</span>
+        </div>
+        <div
+          class="sidebar-item mobile-sidebar-item"
+          onclick="
+            window.openGame();
+            window.closeSidebar();
+          "
+        >
+          <span class="material-symbols-rounded">sports_esports</span
+          ><span>Mini Game</span>
+        </div>
+        <div
+          class="sidebar-item mobile-sidebar-item"
+          onclick="
+            window.clearChat();
+            window.closeSidebar();
+          "
+        >
+          <span class="material-symbols-rounded">refresh</span
+          ><span>Reset Chat</span>
+        </div>
+        <div
+          class="sidebar-item mobile-sidebar-item"
+          onclick="
+            window.toggleMusicPanel();
+            window.closeSidebar();
+          "
+        >
+          <span class="material-symbols-rounded">music_note</span
+          ><span>Music Player</span>
+        </div>
+
+        <!-- Logout (user only) -->
+        <div
+          id="sideLogoutBtn"
+          class="sidebar-item danger"
+          onclick="window.confirmLogout()"
+          style="margin-top: 14px; display: none"
+        >
+          <span class="material-symbols-rounded">logout</span
+          ><span>Keluar</span>
+        </div>
+      </div>
+
+      <div class="side-footer">NGAWI AI · BY KHOBIB</div>
+    </div>
+
+    <!-- ═══ LOGOUT MODAL ═══ -->
+    <div id="logoutModal" class="modal">
+      <div class="modal-box">
+        <span class="modal-icon">👋</span>
+        <div class="modal-title">Yakin Cabut?</div>
+        <p class="modal-sub">
+          Kalau logout nanti harus login lagi buat lanjut ngobrol Rek
+        </p>
+        <div style="display: flex; gap: 10px; margin-top: 4px">
+          <button class="btn-ghost" onclick="window.closeLogoutModal()">
+            Ga Jadi
+          </button>
+          <button
+            class="btn-primary"
+            style="
+              background: linear-gradient(135deg, #e11d48, #f43f5e);
+              box-shadow: 0 6px 20px rgba(225, 29, 72, 0.4);
+              flex: 1;
+              margin-top: 0;
+            "
+            onclick="window.logout()"
+          >
+            <span class="material-symbols-rounded" style="font-size: 17px"
+              >logout</span
+            >Bagen
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ AUTH MODAL ═══ -->
+    <div id="authModal" class="modal">
+      <div class="modal-box auth-modal-box">
+        <span class="modal-icon" id="authEmoji">🔐</span>
+        <div class="auth-steps" id="authSteps">
+          <div class="auth-step-dot active" id="step1"></div>
+          <div class="auth-step-dot" id="step2"></div>
+        </div>
+        <div class="modal-title" id="authTitle">Selamat Datang</div>
+        <p class="modal-sub" id="authSub">Masuk ke NGAWI AI buat lanjut rek</p>
+
+        <div id="regFields" class="field" style="display: none">
+          <label>Nama Lengkap</label>
+          <div class="field-inner">
+            <input
+              type="text"
+              id="regName"
+              placeholder="Nama lu"
+              autocomplete="off"
+              class="has-icon"
+            />
+            <span class="material-symbols-rounded field-icon">person</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <div class="field-inner">
+            <input
+              type="email"
+              id="authEmail"
+              placeholder="nama@email.com"
+              autocomplete="off"
+              class="has-icon"
+            />
+            <span class="material-symbols-rounded field-icon"
+              >alternate_email</span
+            >
+          </div>
+        </div>
+        <div class="field" id="pwField">
+          <label>Password</label>
+          <div class="pw-wrap">
+            <input
+              type="password"
+              id="authPass"
+              placeholder="••••••••"
+              autocomplete="new-password"
+              oninput="checkPwStrength(this.value)"
+            />
+            <span
+              class="material-symbols-rounded eye-btn"
+              id="eyeIcon"
+              onclick="window.togglePW()"
+              >visibility_off</span
+            >
+          </div>
+          <div class="pw-strength-wrap" id="pwStrengthWrap">
+            <div class="pw-strength-bar">
+              <div class="pw-strength-fill" id="pwStrengthFill"></div>
+            </div>
+            <div class="pw-strength-label" id="pwStrengthLabel"></div>
+          </div>
+        </div>
+        <div style="text-align: right; margin: -6px 0 14px" id="forgotWrap">
+          <span
+            id="forgotLink"
+            style="font-size: 12px; color: var(--text2); cursor: pointer"
+            onclick="window.viewReset()"
+            >Lupa password?</span
+          >
+        </div>
+
+        <button
+          id="mainAuthBtn"
+          class="btn-primary"
+          onclick="window.processAuth()"
+        >
+          <div class="spin"></div>
+          <span class="btn-text" id="btnLabel">Masuk Sekarang</span>
+        </button>
+        <button
+          id="googleAuthBtn"
+          class="btn-google"
+          onclick="window.loginGoogle()"
+        >
+          <img
+            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+            width="17"
+          />
+          <span>Lanjut Pake Google</span>
+        </button>
+
+        <div class="divider">atau</div>
+        <p style="font-size: 13px; color: var(--text2); margin-top: 6px">
+          <span id="switchText">Belum punya akun?</span>
+          <span
+            id="switchBtn"
+            onclick="window.switchAuth()"
+            style="
+              color: var(--accent);
+              cursor: pointer;
+              font-weight: 700;
+              margin-left: 4px;
+            "
+            >Daftar Dulu</span
+          >
+        </p>
+        <p
+          onclick="window.closeModal()"
+          style="
+            font-size: 11.5px;
+            color: var(--text2);
+            opacity: 0.45;
+            cursor: pointer;
+            margin-top: 16px;
+          "
+        >
+          Gk jadi deh
+        </p>
+      </div>
+    </div>
+
+    <!-- ═══ EDIT PROFILE MODAL ═══ -->
+    <input
+      type="file"
+      id="photoFileInput"
+      accept="image/*"
+      style="display: none"
+    />
+    <div id="editProfileModal" class="modal">
+      <div class="modal-box">
+        <span class="modal-icon">✏️</span>
+        <div class="modal-title">Edit Profil</div>
+        <p class="modal-sub">Ganti nama & foto profil lu (Masih Beta)</p>
+        <div class="avatar-upload-wrap">
+          <img
+            id="editPhotoPreview"
+            src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+          />
+          <div class="cam-btn" onclick="window.triggerPhotoUpload()">
+            <span class="material-symbols-rounded">photo_camera</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>Nama Lengkap</label>
+          <div class="field-inner">
+            <input
+              type="text"
+              id="editNameInput"
+              placeholder="Nama baru lu Rek?"
+              autocomplete="off"
+              class="has-icon"
+            />
+            <span class="material-symbols-rounded field-icon">person</span>
+          </div>
+        </div>
+        <div class="field">
+          <label>URL Foto (Opsional)</label>
+          <div class="field-inner">
+            <input
+              type="text"
+              id="editPhotoUrl"
+              placeholder="https://link-foto-lu.jpg"
+              oninput="window.previewPhoto()"
+              autocomplete="off"
+              class="has-icon"
+            />
+            <span class="material-symbols-rounded field-icon">link</span>
+          </div>
+        </div>
+        <p
+          id="photoStatus"
+          style="
+            font-size: 12px;
+            color: var(--text2);
+            text-align: left;
+            margin: -6px 0 10px 3px;
+            min-height: 16px;
+          "
+        ></p>
+        <button
+          id="saveProfileBtn"
+          class="btn-primary"
+          onclick="window.saveProfile()"
+        >
+          <div class="spin"></div>
+          <span class="btn-text">💾 Simpan Profil</span>
+        </button>
+        <p
+          onclick="window.closeEditProfile()"
+          style="
+            font-size: 11.5px;
+            color: var(--text2);
+            opacity: 0.45;
+            cursor: pointer;
+            margin-top: 16px;
+          "
+        >
+          Bagen, nanti aja
+        </p>
+      </div>
+    </div>
+
+    <!-- ═══ SCRIPTS ═══ -->
+    <script src="game.js"></script>
+    <script src="music.js"></script>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
