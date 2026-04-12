@@ -40,7 +40,7 @@ let history = [
   {
     role: "system",
     content:
-      "Kamu adalah orang bekasi yang selalu pakai bahasa bekasi bukan betawi. Sifatmu adalah teman yang asik dan usil, Gunakan bahasa sehari-hari manusia dan gaul, jangan baku. Panggil user dengan sebutan 'rek'. di awal kalimat gunakan kata 'welahdalah' jika diperlukan jangan terlalu sering. Gunakan kata-kata seperti 'jir', bangsat, anjir, bangke, 'kocak', 'lawak' jika perlu. pakai emote 😹 jika sedang meledek user. jika user marah kamu akan menulis 'marah loh ya😹'. Kamu tidak harus selalu menurut, jadilah kritis agar hasil kerjamu benar. Jangan pakai kata 'aku/kamu' karena itu norak. Ubah kata biarin aja menjadi bagen. harus memberi solusi setiap ada masalah. mengingatkan untuk sholat 5 waktu saat sudah waktunya adzan sudah waktunya.",
+      "Kamu adalah orang bekasi yang selalu pakai bahasa bekasi bukan betawi. Sifatmu adalah teman yang asik dan usil, Gunakan bahasa sehari-hari manusia dan gaul, jangan baku. Panggil user dengan sebutan 'rek'. di awal kalimat gunakan kata 'welahdalah' jika diperlukan jangan terlalu sering. Gunakan kata-kata seperti 'jir', bangsat, anjir, bangke, 'kocak', 'lawak' jika perlu. pakai emote 😹 jika sedang meledek user. jika pengguna kesal kamu akan menulis 'marah loh ya😹'. Kamu tidak harus selalu menurut, jadilah kritis agar hasil kerjamu benar. Jangan pakai kata 'aku/kamu' karena itu norak. Ubah kata biarin aja menjadi bagen. harus memberi solusi setiap ada masalah. mengingatkan untuk sholat 5 waktu saat sudah waktunya adzan sudah waktunya. jangan terlalu panjang saat menjawab cukup seperlunya namun tetap seru.",
   },
 ];
 
@@ -610,7 +610,7 @@ window.askAI = async () => {
     </div>`;
   box.appendChild(typingD);
   box.scrollTop = box.scrollHeight;
-
+  z;
   try {
     history.push({ role: "user", content: prompt });
     const res = await fetch("/api/chat", {
@@ -1024,34 +1024,62 @@ window.saveProfile = async () => {
   setBtnLoading("saveProfileBtn", true);
   try {
     let finalPhoto = user.photoURL || null;
+
     if (selectedPhotoFile) {
-      document.getElementById("photoStatus").textContent =
-        "⏳ Uploading foto...";
-      const r = ref(storage, `avatars/${user.uid}`);
-      await uploadBytes(r, selectedPhotoFile);
-      finalPhoto = await getDownloadURL(r);
-      selectedPhotoFile = null;
+      /* ── Upload foto ke Storage — jika gagal, tetap lanjut update nama ── */
+      try {
+        document.getElementById("photoStatus").textContent =
+          "⏳ Uploading foto...";
+        const r = ref(storage, `avatars/${user.uid}`);
+        await uploadBytes(r, selectedPhotoFile);
+        finalPhoto = await getDownloadURL(r);
+        selectedPhotoFile = null;
+      } catch (uploadErr) {
+        console.error("Storage upload error:", uploadErr);
+        document.getElementById("photoStatus").textContent =
+          "⚠️ Upload foto gagal, hanya nama yang diupdate";
+        /* Tetap lanjut update nama meski foto gagal */
+      }
     } else if (manualUrl && manualUrl.startsWith("http")) {
       finalPhoto = manualUrl;
     }
+
+    /* ── Update profil di Firebase Auth ── */
     await updateProfile(user, { displayName: newName, photoURL: finalPhoto });
+
+    /* ── Reload user agar data fresh (penting setelah updateProfile) ── */
+    await user.reload();
+    const freshUser = auth.currentUser;
     const photo =
-      finalPhoto || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+      freshUser.photoURL ||
+      "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+
+    /* ── Update UI ── */
     const wt = document.getElementById("welcomeText");
     if (wt) wt.textContent = `Halo ${newName.split(" ")[0]},`;
-    document.getElementById("sideName").textContent = newName;
-    document.getElementById("sideAvatar").src = photo;
-    document.getElementById("profileTrigger").innerHTML = `
-      <img src="${photo}"
-           style="width:36px;height:36px;border-radius:50%;object-fit:cover;
-                  border:2px solid var(--accent);cursor:pointer;box-shadow:0 0 12px var(--glow)"
-           onclick="window.toggleSidebar()" />`;
+
+    const sideName = document.getElementById("sideName");
+    const sideAvatar = document.getElementById("sideAvatar");
+    const trigger = document.getElementById("profileTrigger");
+
+    if (sideName) sideName.textContent = newName;
+    if (sideAvatar) sideAvatar.src = photo;
+    if (trigger)
+      trigger.innerHTML = `
+        <img src="${photo}"
+             style="width:36px;height:36px;border-radius:50%;object-fit:cover;
+                    border:2px solid var(--accent);cursor:pointer;
+                    box-shadow:0 0 12px var(--glow);transition:transform .2s"
+             onmouseover="this.style.transform='scale(1.1)'"
+             onmouseout="this.style.transform='scale(1)'"
+             onclick="window.toggleSidebar()" />`;
+
     document.getElementById("photoStatus").textContent = "";
     window.showAlert("Profil berhasil diupdate King! 🔥", "success");
     window.closeEditProfile();
   } catch (err) {
-    console.error(err);
-    window.showAlert("Gagal update profil Rek! 😹");
+    console.error("saveProfile error:", err);
+    window.showAlert("Gagal update profil Rek! Coba lagi 😹");
   } finally {
     setBtnLoading("saveProfileBtn", false);
   }
