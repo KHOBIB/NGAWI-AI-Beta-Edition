@@ -15,12 +15,6 @@ import {
   updateProfile,
   sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 /* ── Firebase config ── */
 const app = initializeApp({
@@ -32,7 +26,6 @@ const app = initializeApp({
   appId: "1:709879888470:web:433ccc9c7146facc1759f7",
 });
 const auth = getAuth(app);
-const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 /* ── Chat history ── */
@@ -46,7 +39,6 @@ let history = [
 
 /* ─────────────────────────────────────────
    MOON ANIMATION — WELCOME
-   Animasi bulan berkilau dengan orbit bintang
 ───────────────────────────────────────── */
 function runMoonAnimation(canvas) {
   if (!canvas || canvas._moonRunning) return;
@@ -56,7 +48,6 @@ function runMoonAnimation(canvas) {
   const W = 90,
     H = 90;
 
-  /* Static star positions */
   const STARS = [
     { x: 11, y: 13, r: 1.1, p: 0.0 },
     { x: 74, y: 17, r: 0.85, p: 1.1 },
@@ -71,7 +62,6 @@ function runMoonAnimation(canvas) {
   ];
 
   function draw() {
-    /* Stop loop if canvas removed from DOM */
     if (!canvas.isConnected) return;
 
     const t = Date.now() / 1000;
@@ -79,7 +69,6 @@ function runMoonAnimation(canvas) {
 
     ctx.clearRect(0, 0, W, H);
 
-    /* ── 1. Deep space background ── */
     const bgGrd = ctx.createRadialGradient(45, 45, 5, 45, 45, 52);
     bgGrd.addColorStop(0, isDark ? "#1c0d3a" : "#210e52");
     bgGrd.addColorStop(0.7, isDark ? "#0d0820" : "#160a3a");
@@ -89,14 +78,12 @@ function runMoonAnimation(canvas) {
     ctx.roundRect(0, 0, W, H, 22);
     ctx.fill();
 
-    /* ── 2. Twinkling stars ── */
     STARS.forEach((s) => {
       const alpha = 0.28 + 0.68 * (0.5 + 0.5 * Math.sin(t * 1.7 + s.p));
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(210,200,255,${alpha})`;
       ctx.fill();
-      /* Cross sparkle on brighter/larger stars */
       if (s.r >= 0.9 && alpha > 0.72) {
         ctx.save();
         ctx.strokeStyle = `rgba(210,200,255,${alpha * 0.45})`;
@@ -111,7 +98,6 @@ function runMoonAnimation(canvas) {
       }
     });
 
-    /* ── 3. Moon outer corona (pulsing) ── */
     const pulse = 1 + 0.11 * Math.sin(t * 1.25);
     const corona = ctx.createRadialGradient(45, 45, 21, 45, 45, 43 * pulse);
     corona.addColorStop(0, "rgba(255,240,160,0.22)");
@@ -122,7 +108,6 @@ function runMoonAnimation(canvas) {
     ctx.arc(45, 45, 43 * pulse, 0, Math.PI * 2);
     ctx.fill();
 
-    /* ── 4. Moon body ── */
     const moonGrd = ctx.createRadialGradient(38, 36, 1, 45, 45, 23);
     moonGrd.addColorStop(0, "#fffde8");
     moonGrd.addColorStop(0.42, "#f8e060");
@@ -133,7 +118,6 @@ function runMoonAnimation(canvas) {
     ctx.arc(45, 45, 23, 0, Math.PI * 2);
     ctx.fill();
 
-    /* Surface highlight sheen */
     const sheen = ctx.createRadialGradient(38, 37, 0, 38, 37, 11);
     sheen.addColorStop(0, "rgba(255,255,240,0.38)");
     sheen.addColorStop(1, "rgba(255,255,200,0)");
@@ -142,7 +126,6 @@ function runMoonAnimation(canvas) {
     ctx.arc(45, 45, 23, 0, Math.PI * 2);
     ctx.fill();
 
-    /* ── 5. Rotating crescent shadow ── */
     const ca = t * 0.18;
     const cxS = 45 + 13 * Math.cos(ca);
     const cyS = 45 + 5 * Math.sin(ca);
@@ -161,7 +144,6 @@ function runMoonAnimation(canvas) {
     ctx.arc(cxS, cyS, 21, 0, Math.PI * 2);
     ctx.fill();
 
-    /* ── 6. Moon rim highlight ── */
     const rim = ctx.createRadialGradient(45, 45, 19, 45, 45, 24);
     rim.addColorStop(0, "rgba(255,255,255,0)");
     rim.addColorStop(0.75, "rgba(255,245,170,0)");
@@ -171,7 +153,6 @@ function runMoonAnimation(canvas) {
     ctx.arc(45, 45, 24, 0, Math.PI * 2);
     ctx.fill();
 
-    /* ── 7. Orbit ring (faint ellipse) ── */
     ctx.save();
     ctx.beginPath();
     ctx.ellipse(45, 45, 36, 15, -0.14, 0, Math.PI * 2);
@@ -184,7 +165,6 @@ function runMoonAnimation(canvas) {
     ctx.setLineDash([]);
     ctx.restore();
 
-    /* ── 8. Orbiting sparkle — golden 4-pt star ── */
     const a1 = t * 0.65;
     const o1x = 45 + 36 * Math.cos(a1);
     const o1y = 45 + 15 * Math.sin(a1);
@@ -205,13 +185,11 @@ function runMoonAnimation(canvas) {
     ctx.fill();
     ctx.restore();
 
-    /* ── 9. Orbiting sparkle — purple orb ── */
     const a2 = t * 0.65 + Math.PI;
     const o2x = 45 + 36 * Math.cos(a2);
     const o2y = 45 + 15 * Math.sin(a2);
     const al2 = 0.55 + 0.4 * Math.sin(t * 2.7 + 1.0);
 
-    /* Glow halo */
     const o2g = ctx.createRadialGradient(o2x, o2y, 0, o2x, o2y, 7);
     o2g.addColorStop(0, `rgba(167,139,255,${al2 * 0.32})`);
     o2g.addColorStop(1, "rgba(167,139,255,0)");
@@ -219,13 +197,11 @@ function runMoonAnimation(canvas) {
     ctx.beginPath();
     ctx.arc(o2x, o2y, 7, 0, Math.PI * 2);
     ctx.fill();
-    /* Core */
     ctx.beginPath();
     ctx.arc(o2x, o2y, 2.2, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(167,139,255,${al2})`;
     ctx.fill();
 
-    /* ── 10. Orbiting sparkle — cyan dot ── */
     const a3 = t * 0.41 + Math.PI * 0.7;
     const o3x = 45 + 36 * Math.cos(a3);
     const o3y = 45 + 15 * Math.sin(a3);
@@ -242,13 +218,11 @@ function runMoonAnimation(canvas) {
   draw();
 }
 
-/* Initial run on page load */
 (function () {
   const canvas = document.getElementById("catWelcomeCanvas");
   if (canvas) runMoonAnimation(canvas);
 })();
 
-/* Re-run after clearChat() rebuilds the DOM */
 function initMoonAfterRebuild() {
   const canvas = document.getElementById("catWelcomeCanvas");
   runMoonAnimation(canvas);
@@ -308,6 +282,7 @@ function initMoonAfterRebuild() {
     [1, 1, 1, 1, 1],
     [0, 1, 0, 1, 0],
     [1, 1, 1, 1, 1],
+    [0, 1, 1, 1, 0],
     [0, 1, 1, 1, 0],
     [0, 1, 0, 1, 0],
     [1, 1, 0, 1, 1],
@@ -505,7 +480,7 @@ window.clearChat = () => {
     if (wt && u) {
       wt.textContent = `Halo ${(u.displayName || u.email.split("@")[0]).split(" ")[0]},`;
     }
-    initMoonAfterRebuild(); /* restart moon animation on new canvas */
+    initMoonAfterRebuild();
   }, 50);
 };
 
@@ -610,7 +585,7 @@ window.askAI = async () => {
     </div>`;
   box.appendChild(typingD);
   box.scrollTop = box.scrollHeight;
-  z;
+
   try {
     history.push({ role: "user", content: prompt });
     const res = await fetch("/api/chat", {
@@ -685,10 +660,8 @@ function addBubble(role, text, id = "") {
 
 /* ─────────────────────────────────────────
    PASSWORD STRENGTH
-   ⚠️  Hanya aktif di mode DAFTAR (register)
 ───────────────────────────────────────── */
 window.checkPwStrength = (val) => {
-  /* Hanya tampilkan rate password saat mode register */
   if (window.mode !== "register") return;
 
   const wrap = document.getElementById("pwStrengthWrap");
@@ -727,7 +700,6 @@ window.openAuth = (m) => {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  /* Selalu sembunyikan strength bar saat modal dibuka */
   const pwWrap = document.getElementById("pwStrengthWrap");
   if (pwWrap) pwWrap.style.display = "none";
 
@@ -1024,37 +996,44 @@ window.saveProfile = async () => {
   setBtnLoading("saveProfileBtn", true);
   try {
     let finalPhoto = user.photoURL || null;
-
     if (selectedPhotoFile) {
-      /* ── Upload foto ke Storage — jika gagal, tetap lanjut update nama ── */
       try {
         document.getElementById("photoStatus").textContent =
-          "⏳ Uploading foto...";
-        const r = ref(storage, `avatars/${user.uid}`);
-        await uploadBytes(r, selectedPhotoFile);
-        finalPhoto = await getDownloadURL(r);
-        selectedPhotoFile = null;
+          "⏳ Uploading foto ke ImgBB...";
+
+        const formData = new FormData();
+        formData.append("image", selectedPhotoFile);
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          finalPhoto = data.data.url;
+          selectedPhotoFile = null;
+        } else {
+          throw new Error(data.error?.message || "Upload gagal");
+        }
       } catch (uploadErr) {
-        console.error("Storage upload error:", uploadErr);
+        console.error("ImgBB upload error:", uploadErr);
         document.getElementById("photoStatus").textContent =
           "⚠️ Upload foto gagal, hanya nama yang diupdate";
-        /* Tetap lanjut update nama meski foto gagal */
       }
     } else if (manualUrl && manualUrl.startsWith("http")) {
       finalPhoto = manualUrl;
     }
 
-    /* ── Update profil di Firebase Auth ── */
     await updateProfile(user, { displayName: newName, photoURL: finalPhoto });
 
-    /* ── Reload user agar data fresh (penting setelah updateProfile) ── */
     await user.reload();
     const freshUser = auth.currentUser;
     const photo =
       freshUser.photoURL ||
       "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
 
-    /* ── Update UI ── */
     const wt = document.getElementById("welcomeText");
     if (wt) wt.textContent = `Halo ${newName.split(" ")[0]},`;
 
@@ -1641,7 +1620,6 @@ window.saveProfile = async () => {
     drawIdle();
   }
 
-  // SESUDAH (FIXED)
   function handleKey(e) {
     const tag = e.target.tagName;
     if (tag === "INPUT" || tag === "TEXTAREA") return;
