@@ -920,7 +920,7 @@ onAuthStateChanged(auth, (user) => {
              onmouseover="this.style.transform='scale(1.1)'"
              onmouseout="this.style.transform='scale(1)'"
              onclick="window.toggleSidebar()" />`;
-    if (wt) wt.textContent = `Halo ${name},`;
+    if (wt) wt.textContent = `Halo ${name}`;
     const sideName = document.getElementById("sideName");
     const sideEmail = document.getElementById("sideEmail");
     const sideAvatar = document.getElementById("sideAvatar");
