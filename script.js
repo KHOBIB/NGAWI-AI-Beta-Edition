@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════
    NGAWI AI — APP.JS
-   Firebase Auth + Chat + Header Animation
+   Firebase Auth + Chat + Spotify Music + Crop
 ═══════════════════════════════════════════ */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -16,7 +16,6 @@ import {
   sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-/* ── Firebase config ── */
 const app = initializeApp({
   apiKey: "AIzaSyAalw-VTn9T3x6UIIdCtPfoVtaG7jlllzw",
   authDomain: "ngawi-ai-666.firebaseapp.com",
@@ -33,346 +32,9 @@ let history = [
   {
     role: "system",
     content:
-      "Kamu adalah orang bekasi yang selalu pakai bahasa bekasi bukan betawi. Sifatmu adalah teman yang asik dan usil, Gunakan bahasa sehari-hari manusia dan gaul, jangan baku. Panggil user dengan sebutan 'rek'. di awal kalimat gunakan kata 'welahdalah' jika diperlukan jangan terlalu sering. Gunakan kata-kata seperti 'jir', bangsat, anjir, bangke, 'kocak', 'lawak' jika perlu. pakai emote 😹 jika sedang meledek user. jika pengguna kesal kamu akan menulis 'marah loh ya😹'. Kamu tidak harus selalu menurut, jadilah kritis agar hasil kerjamu benar. Jangan pakai kata 'aku/kamu' karena itu norak. Ubah kata biarin aja menjadi bagen. harus memberi solusi setiap ada masalah. mengingatkan untuk sholat 5 waktu saat sudah waktunya adzan sudah waktunya. jangan terlalu panjang saat menjawab cukup seperlunya namun tetap seru.",
+      "Kamu adalah orang bekasi yang selalu pakai bahasa bekasi bukan betawi. Sifatmu adalah teman yang asik dan usil, Gunakan bahasa sehari-hari manusia dan gaul, jangan baku. Panggil user dengan sebutan 'rek'. di awal kalimat gunakan kata 'welahdalah' jika diperlukan jangan terlalu sering. Gunakan kata-kata seperti 'jir', bangsat, anjir, bangke, 'kocak', 'lawak' jika perlu. pakai emote 😹 jika sedang meledek user. jika pengguna kesal kamu akan menulis 'marah loh ya😹'. Kamu tidak harus selalu menurut, jadilah kritis agar hasil kerjamu benar. Jangan pakai kata 'aku/kamu' karena itu norak. Ubah kata biarin aja menjadi bagen. harus memberi solusi setiap ada masalah. mengingatkan untuk sholat 5 waktu saat sudah waktunya adzan sudah waktunya. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna. DILARANG KERAS TOTAL menjawab hanya 1 kata, 1 huruf, 2 kata, atau kalimat terpotong. Setiap jawaban HARUS lengkap, jelas, informatif, dan tidak terpotong di tengah kalimat. Jika ditanya sesuatu, beri penjelasan yang cukup dan tuntas. Pastikan setiap respons selesai dengan kalimat yang lengkap — jangan berhenti di tengah-tengah. Jika kamu tidak tahu sesuatu, katakan dengan jujur tapi tetap berikan alternatif atau saran yang berguna minimal 2-3 kalimat.",
   },
 ];
-
-/* ─────────────────────────────────────────
-   MOON ANIMATION — WELCOME
-───────────────────────────────────────── */
-function runMoonAnimation(canvas) {
-  if (!canvas || canvas._moonRunning) return;
-  canvas._moonRunning = true;
-
-  const ctx = canvas.getContext("2d");
-  const W = 90,
-    H = 90;
-
-  const STARS = [
-    { x: 11, y: 13, r: 1.1, p: 0.0 },
-    { x: 74, y: 17, r: 0.85, p: 1.1 },
-    { x: 82, y: 54, r: 1.0, p: 2.4 },
-    { x: 7, y: 64, r: 0.9, p: 0.6 },
-    { x: 17, y: 78, r: 0.8, p: 1.9 },
-    { x: 78, y: 74, r: 1.0, p: 2.7 },
-    { x: 63, y: 9, r: 0.75, p: 0.3 },
-    { x: 19, y: 43, r: 0.65, p: 1.4 },
-    { x: 83, y: 31, r: 0.8, p: 3.1 },
-    { x: 55, y: 79, r: 0.7, p: 2.0 },
-  ];
-
-  function draw() {
-    if (!canvas.isConnected) return;
-
-    const t = Date.now() / 1000;
-    const isDark = document.body.getAttribute("data-theme") !== "light";
-
-    ctx.clearRect(0, 0, W, H);
-
-    const bgGrd = ctx.createRadialGradient(45, 45, 5, 45, 45, 52);
-    bgGrd.addColorStop(0, isDark ? "#1c0d3a" : "#210e52");
-    bgGrd.addColorStop(0.7, isDark ? "#0d0820" : "#160a3a");
-    bgGrd.addColorStop(1, isDark ? "#06060f" : "#0a0620");
-    ctx.fillStyle = bgGrd;
-    ctx.beginPath();
-    ctx.roundRect(0, 0, W, H, 22);
-    ctx.fill();
-
-    STARS.forEach((s) => {
-      const alpha = 0.28 + 0.68 * (0.5 + 0.5 * Math.sin(t * 1.7 + s.p));
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(210,200,255,${alpha})`;
-      ctx.fill();
-      if (s.r >= 0.9 && alpha > 0.72) {
-        ctx.save();
-        ctx.strokeStyle = `rgba(210,200,255,${alpha * 0.45})`;
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(s.x - s.r * 2.8, s.y);
-        ctx.lineTo(s.x + s.r * 2.8, s.y);
-        ctx.moveTo(s.x, s.y - s.r * 2.8);
-        ctx.lineTo(s.x, s.y + s.r * 2.8);
-        ctx.stroke();
-        ctx.restore();
-      }
-    });
-
-    const pulse = 1 + 0.11 * Math.sin(t * 1.25);
-    const corona = ctx.createRadialGradient(45, 45, 21, 45, 45, 43 * pulse);
-    corona.addColorStop(0, "rgba(255,240,160,0.22)");
-    corona.addColorStop(0.5, "rgba(255,210, 80,0.09)");
-    corona.addColorStop(1, "rgba(255,180,  0,0)");
-    ctx.fillStyle = corona;
-    ctx.beginPath();
-    ctx.arc(45, 45, 43 * pulse, 0, Math.PI * 2);
-    ctx.fill();
-
-    const moonGrd = ctx.createRadialGradient(38, 36, 1, 45, 45, 23);
-    moonGrd.addColorStop(0, "#fffde8");
-    moonGrd.addColorStop(0.42, "#f8e060");
-    moonGrd.addColorStop(0.82, "#d98818");
-    moonGrd.addColorStop(1, "#b86808");
-    ctx.fillStyle = moonGrd;
-    ctx.beginPath();
-    ctx.arc(45, 45, 23, 0, Math.PI * 2);
-    ctx.fill();
-
-    const sheen = ctx.createRadialGradient(38, 37, 0, 38, 37, 11);
-    sheen.addColorStop(0, "rgba(255,255,240,0.38)");
-    sheen.addColorStop(1, "rgba(255,255,200,0)");
-    ctx.fillStyle = sheen;
-    ctx.beginPath();
-    ctx.arc(45, 45, 23, 0, Math.PI * 2);
-    ctx.fill();
-
-    const ca = t * 0.18;
-    const cxS = 45 + 13 * Math.cos(ca);
-    const cyS = 45 + 5 * Math.sin(ca);
-
-    const sdark = isDark ? "rgba(6,4,16,0.97)" : "rgba(10,4,26,0.97)";
-    const smid = isDark ? "rgba(8,5,18,0.78)" : "rgba(14,6,34,0.78)";
-    const sfade = isDark ? "rgba(10,7,20,0.22)" : "rgba(18,8,42,0.22)";
-
-    const shadowGrd = ctx.createRadialGradient(cxS, cyS, 3, cxS, cyS, 21);
-    shadowGrd.addColorStop(0, sdark);
-    shadowGrd.addColorStop(0.58, smid);
-    shadowGrd.addColorStop(0.88, sfade);
-    shadowGrd.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = shadowGrd;
-    ctx.beginPath();
-    ctx.arc(cxS, cyS, 21, 0, Math.PI * 2);
-    ctx.fill();
-
-    const rim = ctx.createRadialGradient(45, 45, 19, 45, 45, 24);
-    rim.addColorStop(0, "rgba(255,255,255,0)");
-    rim.addColorStop(0.75, "rgba(255,245,170,0)");
-    rim.addColorStop(1, "rgba(255,235,120,0.28)");
-    ctx.fillStyle = rim;
-    ctx.beginPath();
-    ctx.arc(45, 45, 24, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(45, 45, 36, 15, -0.14, 0, Math.PI * 2);
-    ctx.strokeStyle = isDark
-      ? "rgba(167,139,255,0.1)"
-      : "rgba(100,60,200,0.12)";
-    ctx.lineWidth = 0.8;
-    ctx.setLineDash([3, 5]);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-
-    const a1 = t * 0.65;
-    const o1x = 45 + 36 * Math.cos(a1);
-    const o1y = 45 + 15 * Math.sin(a1);
-    const al1 = 0.6 + 0.38 * Math.sin(t * 3.1);
-
-    ctx.save();
-    ctx.translate(o1x, o1y);
-    ctx.rotate(t * 2.4);
-    ctx.fillStyle = `rgba(255,235,110,${al1})`;
-    ctx.beginPath();
-    for (let i = 0; i < 8; i++) {
-      const ang = (i / 8) * Math.PI * 2 - Math.PI / 2;
-      const r = i % 2 === 0 ? 3.8 : 1.4;
-      if (i === 0) ctx.moveTo(Math.cos(ang) * r, Math.sin(ang) * r);
-      else ctx.lineTo(Math.cos(ang) * r, Math.sin(ang) * r);
-    }
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-
-    const a2 = t * 0.65 + Math.PI;
-    const o2x = 45 + 36 * Math.cos(a2);
-    const o2y = 45 + 15 * Math.sin(a2);
-    const al2 = 0.55 + 0.4 * Math.sin(t * 2.7 + 1.0);
-
-    const o2g = ctx.createRadialGradient(o2x, o2y, 0, o2x, o2y, 7);
-    o2g.addColorStop(0, `rgba(167,139,255,${al2 * 0.32})`);
-    o2g.addColorStop(1, "rgba(167,139,255,0)");
-    ctx.fillStyle = o2g;
-    ctx.beginPath();
-    ctx.arc(o2x, o2y, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(o2x, o2y, 2.2, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(167,139,255,${al2})`;
-    ctx.fill();
-
-    const a3 = t * 0.41 + Math.PI * 0.7;
-    const o3x = 45 + 36 * Math.cos(a3);
-    const o3y = 45 + 15 * Math.sin(a3);
-    const al3 = 0.42 + 0.46 * Math.sin(t * 2.1 + 2.2);
-
-    ctx.beginPath();
-    ctx.arc(o3x, o3y, 1.6, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(103,232,249,${al3})`;
-    ctx.fill();
-
-    requestAnimationFrame(draw);
-  }
-
-  draw();
-}
-
-(function () {
-  const canvas = document.getElementById("catWelcomeCanvas");
-  if (canvas) runMoonAnimation(canvas);
-})();
-
-function initMoonAfterRebuild() {
-  const canvas = document.getElementById("catWelcomeCanvas");
-  runMoonAnimation(canvas);
-}
-
-/* ─────────────────────────────────────────
-   HEADER CHARACTER ANIMATION
-───────────────────────────────────────── */
-(function initHeaderAnim() {
-  const canvas = document.getElementById("headerCharCanvas");
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-
-  function resize() {
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-  }
-  resize();
-  window.addEventListener("resize", resize);
-
-  const CHARS = [
-    { x: 60, y: 0, vx: 0.7, vy: 0, frame: 0, ft: 0, color: "#a78bff", size: 3 },
-    {
-      x: 180,
-      y: 0,
-      vx: -0.5,
-      vy: 0,
-      frame: 1,
-      ft: 4,
-      color: "#67e8f9",
-      size: 2.5,
-    },
-    {
-      x: 300,
-      y: 0,
-      vx: 0.9,
-      vy: 0,
-      frame: 0,
-      ft: 2,
-      color: "#f472b6",
-      size: 2.5,
-    },
-    {
-      x: 420,
-      y: 0,
-      vx: -0.7,
-      vy: 0,
-      frame: 1,
-      ft: 6,
-      color: "#34d399",
-      size: 2,
-    },
-  ];
-
-  const BODY_A = [
-    [0, 1, 1, 1, 0],
-    [1, 1, 1, 1, 1],
-    [0, 1, 0, 1, 0],
-    [1, 1, 1, 1, 1],
-    [0, 1, 1, 1, 0],
-    [0, 1, 1, 1, 0],
-    [0, 1, 0, 1, 0],
-    [1, 1, 0, 1, 1],
-    [1, 0, 0, 0, 1],
-  ];
-  const BODY_B = [
-    [0, 1, 1, 1, 0],
-    [1, 1, 1, 1, 1],
-    [0, 1, 0, 1, 0],
-    [1, 1, 1, 1, 1],
-    [0, 1, 1, 1, 0],
-    [1, 1, 0, 1, 1],
-    [0, 1, 0, 1, 0],
-    [0, 1, 0, 1, 0],
-  ];
-
-  function drawChar(c) {
-    const body = c.frame === 0 ? BODY_A : BODY_B;
-    const tileW = c.size;
-    const bobY = Math.sin(Date.now() / 400 + c.x * 0.01) * 2;
-    const baseY = canvas.height / 2 - (body.length * tileW) / 2 + bobY;
-    const baseX = c.x - (body[0].length * tileW) / 2;
-
-    body.forEach((row, ry) => {
-      row.forEach((px, rx) => {
-        if (px) {
-          ctx.fillStyle = c.color;
-          ctx.globalAlpha = 0.85;
-          ctx.fillRect(
-            Math.round(baseX + rx * tileW),
-            Math.round(baseY + ry * tileW),
-            tileW - 0.5,
-            tileW - 0.5,
-          );
-        }
-      });
-    });
-    ctx.globalAlpha = 1;
-  }
-
-  const sparkles = [];
-  setInterval(() => {
-    if (sparkles.length < 15) {
-      sparkles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        life: 30 + Math.random() * 20,
-        maxL: 50,
-        size: 1 + Math.random() * 2,
-        color: ["#a78bff", "#67e8f9", "#f472b6", "#fbbf24"][
-          Math.floor(Math.random() * 4)
-        ],
-      });
-    }
-  }, 300);
-
-  function loop() {
-    requestAnimationFrame(loop);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    CHARS.forEach((c) => {
-      c.x += c.vx;
-      c.ft++;
-      if (c.ft > 10) {
-        c.frame = (c.frame + 1) % 2;
-        c.ft = 0;
-      }
-      const margin = 20;
-      if (c.x < margin || c.x > canvas.width - margin) {
-        c.vx *= -1;
-        c.x = Math.max(margin, Math.min(canvas.width - margin, c.x));
-      }
-      drawChar(c);
-    });
-
-    sparkles.forEach((s, i) => {
-      s.life--;
-      if (s.life <= 0) {
-        sparkles.splice(i, 1);
-        return;
-      }
-      const alpha = s.life / s.maxL;
-      ctx.fillStyle = s.color;
-      ctx.globalAlpha = alpha * 0.7;
-      ctx.fillRect(Math.round(s.x), Math.round(s.y), s.size, s.size);
-    });
-    ctx.globalAlpha = 1;
-  }
-  loop();
-})();
 
 /* ─────────────────────────────────────────
    PLACEHOLDER HELPER
@@ -384,8 +46,10 @@ window.updatePlaceholder = function () {
   if (ta.value.length > 0) ph.classList.add("hidden");
   else ph.classList.remove("hidden");
 };
+
 document.addEventListener("DOMContentLoaded", () => {
   window.updatePlaceholder();
+  initCropCanvas();
 });
 
 /* ─────────────────────────────────────────
@@ -477,10 +141,8 @@ window.clearChat = () => {
   setTimeout(() => {
     const u = auth.currentUser;
     const wt = document.getElementById("welcomeText");
-    if (wt && u) {
+    if (wt && u)
       wt.textContent = `Halo ${(u.displayName || u.email.split("@")[0]).split(" ")[0]},`;
-    }
-    initMoonAfterRebuild();
   }, 50);
 };
 
@@ -488,11 +150,8 @@ function buildWelcomeHTML() {
   return `
     <div id="welcome">
       <div class="welcome-orb-wrap">
-        <div class="pixel-corner tl"></div><div class="pixel-corner tr"></div>
-        <div class="pixel-corner bl"></div><div class="pixel-corner br"></div>
         <div class="welcome-icon">
-          <canvas id="catWelcomeCanvas" width="90" height="90"
-            style="display:block;border-radius:22px;"></canvas>
+          <img src="nyan.gif" class="welcome-gif" alt="Rainbow Cat" />
         </div>
       </div>
       <h2 id="welcomeText">Halo User Tercinta,</h2>
@@ -536,21 +195,14 @@ function spawnParticles(btn) {
     p.className = "particle";
     const angle = ((Math.PI * 2) / 12) * i;
     const dist = 50 + Math.random() * 60;
-    p.style.cssText = `
-      left:${cx - 4}px; top:${cy - 4}px;
-      background:${colors[i % colors.length]};
-      --dx:${Math.cos(angle) * dist}px;
-      --dy:${Math.sin(angle) * dist}px;
-      --rot:${Math.random() * 360}deg;
-      animation-duration:${0.6 + Math.random() * 0.4}s;
-    `;
+    p.style.cssText = `left:${cx - 4}px;top:${cy - 4}px;background:${colors[i % colors.length]};--dx:${Math.cos(angle) * dist}px;--dy:${Math.sin(angle) * dist}px;--rot:${Math.random() * 360}deg;animation-duration:${0.6 + Math.random() * 0.4}s;`;
     document.body.appendChild(p);
     setTimeout(() => p.remove(), 1200);
   }
 }
 
 /* ─────────────────────────────────────────
-   AI CHAT
+   AI CHAT — FIXED STREAMING + TRUNCATION BUG
 ───────────────────────────────────────── */
 window.askAI = async () => {
   const input = document.getElementById("uIn");
@@ -588,59 +240,103 @@ window.askAI = async () => {
 
   try {
     history.push({ role: "user", content: prompt });
+
+    // Truncate history to prevent context overflow (keep system + last 30 messages)
+    const messagesToSend =
+      history.length > 32 ? [history[0], ...history.slice(-30)] : history;
+
     const res = await fetch("/api/chat", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",
-        messages: history,
+        messages: messagesToSend,
         stream: true,
+        max_tokens: 4096,
+        temperature: 0.85,
+        min_tokens: 40,
       }),
     });
 
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
     const reader = res.body.getReader();
+    const decoder = new TextDecoder("utf-8");
     let full = "",
-      started = false;
+      started = false,
+      buffer = "";
+
+    const processLine = (line) => {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) return;
+      const data = trimmed.slice(6).trim();
+      if (data === "[DONE]" || !data) return;
+      try {
+        const parsed = JSON.parse(data);
+        const content = parsed?.choices?.[0]?.delta?.content;
+        if (content && typeof content === "string" && content.length > 0) {
+          full += content;
+          if (!started) {
+            const tm = document.getElementById("typing-msg-" + lId);
+            if (tm)
+              tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
+            started = true;
+          }
+          const bubble = document.getElementById(lId);
+          if (bubble) {
+            bubble.innerHTML =
+              full.replace(/\*\*/g, "").replace(/\n/g, "<br>") +
+              '<span class="typing-cursor"></span>';
+            box.scrollTop = box.scrollHeight;
+          }
+        }
+      } catch (_) {
+        /* skip malformed chunks */
+      }
+    };
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = new TextDecoder().decode(value);
-      for (const line of chunk
-        .split("\n")
-        .filter((l) => l.trim().startsWith("data: "))) {
-        const data = line.slice(6);
-        if (data === "[DONE]") break;
-        try {
-          const content = JSON.parse(data).choices[0].delta.content;
-          if (content) {
-            full += content;
-            if (!started) {
-              const tm = document.getElementById("typing-msg-" + lId);
-              if (tm)
-                tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
-              started = true;
-            }
-            const bubble = document.getElementById(lId);
-            if (bubble) {
-              bubble.innerHTML =
-                full.replace(/\*\*/g, "").replace(/\n/g, "<br>") +
-                '<span class="typing-cursor"></span>';
-              box.scrollTop = box.scrollHeight;
-            }
-          }
-        } catch (_) {}
+      if (done) {
+        const flushed = decoder.decode(new Uint8Array(0), { stream: false });
+        if (flushed) buffer += flushed;
+        if (buffer.trim()) {
+          buffer.split("\n").forEach(processLine);
+          buffer = "";
+        }
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      lines.forEach(processLine);
+    }
+
+    // Flush remaining buffer
+    if (buffer.trim()) {
+      buffer.split("\n").forEach(processLine);
+    }
+
+    // Fallback: response terlalu pendek/terpotong
+    if (!full || full.trim().length < 15) {
+      full =
+        "Waduh maaf Rek, kayaknya jawaban gue ke-cut atau koneksi lagi gangguan nih. Coba kirim lagi pertanyaan lu ya, gue bakal jawab yang lengkap dan bener. Pastiin koneksi lu stabil juga biar streaming-nya lancar! 😹";
+      const tm = document.getElementById("typing-msg-" + lId);
+      if (tm) {
+        if (!started)
+          tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
+        const bubble = document.getElementById(lId);
+        if (bubble) bubble.innerHTML = full;
       }
     }
 
     document.getElementById(lId)?.querySelector(".typing-cursor")?.remove();
     history.push({ role: "assistant", content: full });
   } catch (e) {
+    console.error("Chat error:", e);
     const tm = document.getElementById("typing-msg-" + lId);
     if (tm)
-      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble">Koneksi error Rek! Coba lagi ya 😹</div>`;
+      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble">Koneksi error Rek! Coba lagi ya, mungkin koneksi lu lagi lemot atau server lagi sibuk. 😹</div>`;
   } finally {
     sendBtn.disabled = false;
   }
@@ -663,7 +359,6 @@ function addBubble(role, text, id = "") {
 ───────────────────────────────────────── */
 window.checkPwStrength = (val) => {
   if (window.mode !== "register") return;
-
   const wrap = document.getElementById("pwStrengthWrap");
   const fill = document.getElementById("pwStrengthFill");
   const label = document.getElementById("pwStrengthLabel");
@@ -671,7 +366,6 @@ window.checkPwStrength = (val) => {
     wrap.style.display = "none";
     return;
   }
-
   wrap.style.display = "block";
   let score = 0;
   if (val.length >= 8) score++;
@@ -702,17 +396,14 @@ window.openAuth = (m) => {
   });
   const pwWrap = document.getElementById("pwStrengthWrap");
   if (pwWrap) pwWrap.style.display = "none";
-
   const modal = document.getElementById("authModal");
   modal.style.display = "flex";
   setTimeout(() => modal.classList.add("active"), 10);
-
   const isReg = m === "register";
   const s1 = document.getElementById("step1");
   const s2 = document.getElementById("step2");
   if (s1) s1.className = isReg ? "auth-step-dot done" : "auth-step-dot active";
   if (s2) s2.className = isReg ? "auth-step-dot active" : "auth-step-dot";
-
   const sets = {
     reset: {
       emoji: "🔑",
@@ -755,7 +446,6 @@ window.openAuth = (m) => {
     },
   };
   const cfg = sets[m] || sets.login;
-
   document.getElementById("authEmoji").textContent = cfg.emoji;
   document.getElementById("authTitle").textContent = cfg.title;
   document.getElementById("authSub").textContent = cfg.sub;
@@ -815,7 +505,7 @@ window.processAuth = async () => {
       "auth/user-not-found": "Email belum kedaftar jir",
       "auth/invalid-email": "Format email salah coy",
     };
-    window.showAlert(msgs[err.code] || "Gagal! Cek lagi data lu coba ");
+    window.showAlert(msgs[err.code] || "Gagal! Cek lagi data lu coba");
   } finally {
     setBtnLoading("mainAuthBtn", false);
   }
@@ -835,8 +525,10 @@ window.loginGoogle = () => {
 window.togglePW = () => {
   const pw = document.getElementById("authPass");
   const eye = document.getElementById("eyeIcon");
-  pw.type = pw.type === "password" ? "text" : "password";
-  eye.textContent = pw.type === "password" ? "visibility_off" : "visibility";
+  if (!pw || !eye) return;
+  const isHidden = pw.type === "password";
+  pw.type = isHidden ? "text" : "password";
+  eye.textContent = isHidden ? "visibility" : "visibility_off";
 };
 
 window.confirmLogout = () => {
@@ -851,7 +543,6 @@ window.closeLogoutModal = () => {
   setTimeout(() => (m.style.display = "none"), 400);
 };
 window.logout = () => signOut(auth).then(() => location.reload());
-
 window.closeModal = () => {
   const m = document.getElementById("authModal");
   m.classList.remove("active");
@@ -875,7 +566,7 @@ window.closeSidebar = () => {
 };
 
 /* ─────────────────────────────────────────
-   SIDEBAR STATE UPDATER
+   SIDEBAR STATE
 ───────────────────────────────────────── */
 function updateSidebarState(user) {
   const headerGuest = document.getElementById("sideHeaderGuest");
@@ -883,7 +574,6 @@ function updateSidebarState(user) {
   const menuGuest = document.getElementById("sideMenuGuest");
   const menuUser = document.getElementById("sideMenuUser");
   const logoutBtn = document.getElementById("sideLogoutBtn");
-
   if (user) {
     if (headerGuest) headerGuest.style.display = "none";
     if (headerUser) headerUser.style.display = "block";
@@ -905,22 +595,14 @@ function updateSidebarState(user) {
 onAuthStateChanged(auth, (user) => {
   const trigger = document.getElementById("profileTrigger");
   const wt = document.getElementById("welcomeText");
-
   if (user) {
     const name = (user.displayName || user.email.split("@")[0]).split(" ")[0];
     const photo =
       user.photoURL ||
       "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
     if (trigger)
-      trigger.innerHTML = `
-        <img src="${photo}"
-             style="width:36px;height:36px;border-radius:50%;object-fit:cover;
-                    border:2px solid var(--accent);cursor:pointer;
-                    box-shadow:0 0 12px var(--glow);transition:transform .2s"
-             onmouseover="this.style.transform='scale(1.1)'"
-             onmouseout="this.style.transform='scale(1)'"
-             onclick="window.toggleSidebar()" />`;
-    if (wt) wt.textContent = `Halo ${name}`;
+      trigger.innerHTML = `<img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer;box-shadow:0 0 12px var(--glow);transition:transform .2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.toggleSidebar()" />`;
+    if (wt) wt.textContent = `Halo ${name},`;
     const sideName = document.getElementById("sideName");
     const sideEmail = document.getElementById("sideEmail");
     const sideAvatar = document.getElementById("sideAvatar");
@@ -931,10 +613,7 @@ onAuthStateChanged(auth, (user) => {
     updateSidebarState(user);
   } else {
     if (trigger)
-      trigger.innerHTML = `
-        <button class="icon-btn" onclick="window.toggleSidebar()">
-          <span class="material-symbols-rounded" style="font-size:26px">account_circle</span>
-        </button>`;
+      trigger.innerHTML = `<button class="icon-btn" onclick="window.toggleSidebar()"><span class="material-symbols-rounded" style="font-size:26px">account_circle</span></button>`;
     if (wt) wt.textContent = "Halo User Tercinta";
     updateSidebarState(null);
   }
@@ -981,10 +660,8 @@ window.triggerPhotoUpload = () =>
 document.getElementById("photoFileInput")?.addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  selectedPhotoFile = file;
-  document.getElementById("editPhotoPreview").src = URL.createObjectURL(file);
-  document.getElementById("editPhotoUrl").value = "";
-  document.getElementById("photoStatus").textContent = `📎 ${file.name}`;
+  e.target.value = "";
+  openCropModal(file);
 });
 
 window.saveProfile = async () => {
@@ -1000,23 +677,17 @@ window.saveProfile = async () => {
       try {
         document.getElementById("photoStatus").textContent =
           "⏳ Uploading foto ke ImgBB...";
-
         const formData = new FormData();
         formData.append("image", selectedPhotoFile);
-
         const res = await fetch("/api/upload", {
           method: "POST",
           body: formData,
         });
-
         const data = await res.json();
-
         if (data.success) {
           finalPhoto = data.data.url;
           selectedPhotoFile = null;
-        } else {
-          throw new Error(data.error?.message || "Upload gagal");
-        }
+        } else throw new Error(data.error?.message || "Upload gagal");
       } catch (uploadErr) {
         console.error("ImgBB upload error:", uploadErr);
         document.getElementById("photoStatus").textContent =
@@ -1025,34 +696,21 @@ window.saveProfile = async () => {
     } else if (manualUrl && manualUrl.startsWith("http")) {
       finalPhoto = manualUrl;
     }
-
     await updateProfile(user, { displayName: newName, photoURL: finalPhoto });
-
     await user.reload();
     const freshUser = auth.currentUser;
     const photo =
       freshUser.photoURL ||
       "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-
     const wt = document.getElementById("welcomeText");
     if (wt) wt.textContent = `Halo ${newName.split(" ")[0]},`;
-
     const sideName = document.getElementById("sideName");
     const sideAvatar = document.getElementById("sideAvatar");
     const trigger = document.getElementById("profileTrigger");
-
     if (sideName) sideName.textContent = newName;
     if (sideAvatar) sideAvatar.src = photo;
     if (trigger)
-      trigger.innerHTML = `
-        <img src="${photo}"
-             style="width:36px;height:36px;border-radius:50%;object-fit:cover;
-                    border:2px solid var(--accent);cursor:pointer;
-                    box-shadow:0 0 12px var(--glow);transition:transform .2s"
-             onmouseover="this.style.transform='scale(1.1)'"
-             onmouseout="this.style.transform='scale(1)'"
-             onclick="window.toggleSidebar()" />`;
-
+      trigger.innerHTML = `<img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer;box-shadow:0 0 12px var(--glow);transition:transform .2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.toggleSidebar()" />`;
     document.getElementById("photoStatus").textContent = "";
     window.showAlert("Profil berhasil diupdate King! 🔥", "success");
     window.closeEditProfile();
@@ -1064,16 +722,176 @@ window.saveProfile = async () => {
   }
 };
 
+/* ─────────────────────────────────────────
+   PHOTO CROP
+───────────────────────────────────────── */
+let cropImg = null,
+  cropOffsetX = 0,
+  cropOffsetY = 0,
+  cropScale = 1;
+let cropIsDragging = false,
+  cropLastX = 0,
+  cropLastY = 0;
+const CROP_SIZE = 260;
+
+function initCropCanvas() {
+  const canvas = document.getElementById("cropCanvas");
+  if (!canvas) return;
+  canvas.addEventListener("mousedown", (e) => {
+    cropIsDragging = true;
+    cropLastX = e.clientX;
+    cropLastY = e.clientY;
+    e.preventDefault();
+  });
+  canvas.addEventListener(
+    "touchstart",
+    (e) => {
+      cropIsDragging = true;
+      cropLastX = e.touches[0].clientX;
+      cropLastY = e.touches[0].clientY;
+    },
+    { passive: true },
+  );
+  document.addEventListener("mousemove", (e) => {
+    if (!cropIsDragging) return;
+    cropOffsetX += e.clientX - cropLastX;
+    cropOffsetY += e.clientY - cropLastY;
+    cropLastX = e.clientX;
+    cropLastY = e.clientY;
+    renderCropCanvas();
+  });
+  document.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!cropIsDragging) return;
+      cropOffsetX += e.touches[0].clientX - cropLastX;
+      cropOffsetY += e.touches[0].clientY - cropLastY;
+      cropLastX = e.touches[0].clientX;
+      cropLastY = e.touches[0].clientY;
+      renderCropCanvas();
+    },
+    { passive: true },
+  );
+  document.addEventListener("mouseup", () => {
+    cropIsDragging = false;
+  });
+  document.addEventListener("touchend", () => {
+    cropIsDragging = false;
+  });
+  document.getElementById("cropZoom")?.addEventListener("input", (e) => {
+    cropScale = parseFloat(e.target.value);
+    renderCropCanvas();
+  });
+}
+
+function renderCropCanvas() {
+  const canvas = document.getElementById("cropCanvas");
+  if (!canvas || !cropImg) return;
+  canvas.width = CROP_SIZE;
+  canvas.height = CROP_SIZE;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, CROP_SIZE, CROP_SIZE);
+  const scaledW = cropImg.naturalWidth * cropScale;
+  const scaledH = cropImg.naturalHeight * cropScale;
+  const x = (CROP_SIZE - scaledW) / 2 + cropOffsetX;
+  const y = (CROP_SIZE - scaledH) / 2 + cropOffsetY;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.drawImage(cropImg, x, y, scaledW, scaledH);
+  ctx.restore();
+  ctx.beginPath();
+  ctx.arc(CROP_SIZE / 2, CROP_SIZE / 2, CROP_SIZE / 2 - 1, 0, Math.PI * 2);
+  ctx.strokeStyle = "rgba(167, 139, 255, 0.5)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+function openCropModal(file) {
+  const url = URL.createObjectURL(file);
+  cropImg = new Image();
+  cropImg.onload = () => {
+    cropOffsetX = 0;
+    cropOffsetY = 0;
+    const baseScale = Math.max(
+      CROP_SIZE / cropImg.naturalWidth,
+      CROP_SIZE / cropImg.naturalHeight,
+    );
+    cropScale = baseScale;
+    const zoomEl = document.getElementById("cropZoom");
+    if (zoomEl) {
+      zoomEl.min = (baseScale * 0.5).toFixed(4);
+      zoomEl.max = (baseScale * 4).toFixed(4);
+      zoomEl.step = (baseScale * 0.01).toFixed(4);
+      zoomEl.value = baseScale;
+    }
+    const m = document.getElementById("cropModal");
+    m.style.display = "flex";
+    setTimeout(() => {
+      m.classList.add("active");
+      renderCropCanvas();
+    }, 10);
+  };
+  cropImg.onerror = () => window.showAlert("Gagal load gambar Rek 😹");
+  cropImg.src = url;
+}
+
+window.closeCropModal = function () {
+  const m = document.getElementById("cropModal");
+  m.classList.remove("active");
+  setTimeout(() => (m.style.display = "none"), 400);
+};
+
+window.applyCrop = function () {
+  const canvas = document.getElementById("cropCanvas");
+  if (!canvas) return;
+  const OUTPUT_SIZE = 400;
+  const offscreen = document.createElement("canvas");
+  offscreen.width = OUTPUT_SIZE;
+  offscreen.height = OUTPUT_SIZE;
+  const ctx = offscreen.getContext("2d");
+  const ratio = OUTPUT_SIZE / CROP_SIZE;
+  const scaledW = cropImg.naturalWidth * cropScale * ratio;
+  const scaledH = cropImg.naturalHeight * cropScale * ratio;
+  const x = (OUTPUT_SIZE - scaledW) / 2 + cropOffsetX * ratio;
+  const y = (OUTPUT_SIZE - scaledH) / 2 + cropOffsetY * ratio;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.drawImage(cropImg, x, y, scaledW, scaledH);
+  ctx.restore();
+  offscreen.toBlob(
+    (blob) => {
+      if (!blob) {
+        window.showAlert("Gagal crop foto Rek 😹");
+        return;
+      }
+      selectedPhotoFile = new File([blob], "profile-crop.jpg", {
+        type: "image/jpeg",
+      });
+      const previewUrl = URL.createObjectURL(blob);
+      document.getElementById("editPhotoPreview").src = previewUrl;
+      document.getElementById("editPhotoUrl").value = "";
+      document.getElementById("photoStatus").textContent =
+        "✅ Foto berhasil dipotong!";
+      window.closeCropModal();
+    },
+    "image/jpeg",
+    0.92,
+  );
+};
+
 /* ═══════════════════════════════════════════
-   NGAWI AI — MUSIC PLAYER
-   IndexedDB Persistence
+   MUSIC PLAYER
 ═══════════════════════════════════════════ */
 (function () {
   "use strict";
 
-  const DB_NAME = "NgawiMusicDB";
-  const DB_VERSION = 1;
-  const STORE_NAME = "tracks";
+  const DB_NAME = "NgawiMusicDB",
+    DB_VERSION = 1,
+    STORE_NAME = "tracks";
   let db = null;
 
   function openDB() {
@@ -1120,9 +938,169 @@ window.saveProfile = async () => {
   let audioCtx = null,
     analyser = null,
     sourceConnected = false;
+  let currentMobileTab = null;
+  let lastTabTouchAt = 0;
 
   const audio = new Audio();
   audio.volume = parseFloat(localStorage.getItem("ngawi-vol") || "0.8");
+  let isProgressDragging = false;
+  let dragSeekRatio = 0;
+
+  /* ── Synced lyrics state ── */
+  let syncedLines = [];
+  let lastActiveLine = -1;
+  let currentAlbumCoverUrl = null;
+
+  /* ── Favorites ── */
+  const FAVS_KEY = "ngawi-favs";
+  let favSet = new Set();
+  function loadFavs() {
+    try {
+      const raw = localStorage.getItem(FAVS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      favSet = new Set(Array.isArray(arr) ? arr : []);
+    } catch (_) {
+      favSet = new Set();
+    }
+  }
+  function saveFavs() {
+    try {
+      localStorage.setItem(FAVS_KEY, JSON.stringify(Array.from(favSet)));
+    } catch (_) {}
+  }
+  function isFavTrack(track) {
+    if (!track) return false;
+    return favSet.has(track.id) || favSet.has(`name:${track.name}`);
+  }
+  function setFavTrack(track, on) {
+    if (!track) return;
+    const idKey = track.id;
+    const nameKey = `name:${track.name}`;
+    if (on) {
+      if (idKey) favSet.add(idKey);
+      favSet.add(nameKey);
+    } else {
+      if (idKey) favSet.delete(idKey);
+      favSet.delete(nameKey);
+    }
+    saveFavs();
+  }
+  function syncLikeBtn() {
+    const btn = document.getElementById("likeBtn");
+    if (!btn) return;
+    const icon = btn.querySelector("span");
+    const track = currentTrack >= 0 ? playlist[currentTrack] : null;
+    const liked = isFavTrack(track);
+    btn.classList.toggle("liked", liked);
+    btn.style.color = liked ? "#ff3b6a" : "";
+    if (icon) icon.textContent = liked ? "favorite" : "favorite_border";
+  }
+  function renderFavsList() {
+    const container = document.getElementById("favsContainer");
+    if (!container) return;
+    const favTracks = playlist.filter((t) => isFavTrack(t));
+    if (favTracks.length === 0) {
+      container.innerHTML = `<div class="playlist-empty"><span class="playlist-empty-icon">💜</span>Belum ada lagu favorit nih Rek!<br>Pencet tombol <strong>❤️</strong> di lagu yang disuka dulu</div>`;
+      return;
+    }
+    const isPlaying = !audio.paused;
+    container.innerHTML = favTracks
+      .map((t) => {
+        const idx = playlist.indexOf(t);
+        const isActive = idx === currentTrack;
+        return `
+        <div class="playlist-item ${isActive ? "active" : ""}" onclick="window.loadTrack(${idx})">
+          <div class="playlist-item-num">${isActive && isPlaying ? "▶" : idx + 1}</div>
+          <div class="playlist-item-info">
+            <div class="playlist-item-name">${escHtml(t.name)}</div>
+            <div class="playlist-item-dur">${t.duration}</div>
+          </div>
+          <button class="playlist-item-love is-liked" onclick="event.stopPropagation();window.toggleFavFromList(${idx})" title="Hapus dari Favorit">
+            <span class="material-symbols-rounded">favorite</span>
+          </button>
+        </div>`;
+      })
+      .join("");
+  }
+
+  /* ── Parse LRC format ── */
+  function parseLRC(lrcText) {
+    const lines = [];
+    const regex = /\[(\d+):(\d+(?:\.\d+)?)\](.*)/;
+    lrcText.split("\n").forEach((line) => {
+      const match = line.match(regex);
+      if (match) {
+        const time = parseInt(match[1], 10) * 60 + parseFloat(match[2]);
+        const text = match[3].trim();
+        if (text) lines.push({ time, text });
+      }
+    });
+    return lines.sort((a, b) => a.time - b.time);
+  }
+
+  /* ── Album cover via iTunes Search API ── */
+  async function fetchAlbumCover(trackName) {
+    try {
+      let query = trackName;
+      if (trackName.includes(" - ")) {
+        const parts = trackName.split(" - ");
+        query = parts[0].trim() + " " + parts.slice(1).join(" - ").trim();
+      }
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=5`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        const art = data.results[0].artworkUrl100;
+        if (art) return art.replace("100x100bb", "600x600bb");
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /* ── Set album art cover ── */
+  function setAlbumCover(coverUrl) {
+    const albumEl = document.getElementById("albumArt");
+    currentAlbumCoverUrl = coverUrl || null;
+    if (!albumEl) return;
+    if (!albumEl.querySelector(".album-art-emoji")) {
+      const textNodes = Array.from(albumEl.childNodes).filter(
+        (n) => n.nodeType === 3 && n.textContent.trim(),
+      );
+      if (textNodes.length > 0) {
+        const emojiText = textNodes[0].textContent.trim();
+        textNodes[0].remove();
+        const span = document.createElement("span");
+        span.className = "album-art-emoji";
+        span.textContent = emojiText;
+        albumEl.appendChild(span);
+      }
+    }
+    const oldImg = albumEl.querySelector(".album-art-img");
+    if (oldImg) oldImg.remove();
+    const emojiEl = albumEl.querySelector(".album-art-emoji");
+    if (!coverUrl) {
+      if (emojiEl) emojiEl.style.opacity = "1";
+      _updateSideMiniInfo();
+      return;
+    }
+    const img = document.createElement("img");
+    img.className = "album-art-img";
+    img.alt = "Album Cover";
+    img.onload = () => {
+      img.classList.add("loaded");
+      if (emojiEl) emojiEl.style.opacity = "0";
+    };
+    img.onerror = () => {
+      img.remove();
+      if (emojiEl) emojiEl.style.opacity = "1";
+      currentAlbumCoverUrl = null;
+      _updateSideMiniInfo();
+    };
+    img.src = coverUrl;
+    albumEl.insertBefore(img, albumEl.firstChild);
+    _updateSideMiniInfo();
+  }
 
   async function restoreState() {
     await openDB();
@@ -1144,15 +1122,16 @@ window.saveProfile = async () => {
       const idx = playlist.length - 1;
       tmp.addEventListener("loadedmetadata", () => {
         playlist[idx].duration = formatTime(tmp.duration);
-        renderPlaylist();
+        scheduleRenderPlaylist();
       });
     });
     const lastTrack = parseInt(localStorage.getItem("ngawi-track") || "-1");
-    renderPlaylist();
+    scheduleRenderPlaylist();
     if (lastTrack >= 0 && lastTrack < playlist.length)
       loadTrack(lastTrack, false);
   }
 
+  /* ── Visualizer ── */
   const canvas = document.getElementById("visualizerCanvas");
   const ctx = canvas ? canvas.getContext("2d") : null;
 
@@ -1173,9 +1152,11 @@ window.saveProfile = async () => {
     ctx.clearRect(0, 0, W, H);
     const isDark = document.body.getAttribute("data-theme") !== "light";
     const barCount = 32;
+    let beatLevel = 0;
     if (analyser && !audio.paused) {
       const data = new Uint8Array(analyser.frequencyBinCount);
       analyser.getByteFrequencyData(data);
+      beatLevel = data.reduce((s, v) => s + v, 0) / (data.length * 255);
       const barW = (W - (barCount - 1) * 3) / barCount;
       for (let i = 0; i < barCount; i++) {
         const val = data[Math.floor((i * data.length) / barCount)] / 255;
@@ -1207,8 +1188,19 @@ window.saveProfile = async () => {
         ctx.fill();
       }
     }
+    updateBeatPulse(beatLevel);
   }
   drawVisualizer();
+
+  function updateBeatPulse(level) {
+    const album = document.getElementById("albumArt");
+    if (!album) return;
+    const n = Math.max(0, Math.min(1, level || 0));
+    const scale = (1 + n * 0.035).toFixed(4);
+    const glow = (16 + n * 26).toFixed(1);
+    album.style.setProperty("--beat-scale", scale);
+    album.style.setProperty("--beat-glow", `${glow}px`);
+  }
 
   function initAudioCtx() {
     if (audioCtx) return;
@@ -1228,7 +1220,75 @@ window.saveProfile = async () => {
     currentTrack = idx;
     audio.src = playlist[idx].url;
     localStorage.setItem("ngawi-track", idx);
+    const likeBtn = document.getElementById("likeBtn");
+    if (likeBtn) {
+      likeBtn.style.color = "";
+    }
+    window._currentTrackName = playlist[idx].name;
+    window._lyricsLoaded = false;
+    window._lyricsLoadedFor = null;
+    syncedLines = [];
+    lastActiveLine = -1;
+    setAlbumCover(null);
+    fetchAlbumCover(playlist[idx].name).then((coverUrl) => {
+      if (coverUrl && currentTrack === idx) setAlbumCover(coverUrl);
+    });
+    _updateSideMiniInfo();
+    syncLikeBtn();
+    renderFavsList();
     if (autoplay) {
+      audio.load();
+      audio
+        .play()
+        .then(() => {
+          initAudioCtx();
+          if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
+          updatePlayerUI(true);
+          window.fetchLyrics(playlist[idx].name);
+        })
+        .catch(console.error);
+    } else {
+      updatePlayerUI(false);
+      window.fetchLyrics(playlist[idx].name);
+    }
+  };
+
+  function _updateSideMiniInfo() {
+    const track = currentTrack >= 0 ? playlist[currentTrack] : null;
+    const titleEl = document.getElementById("mpMobileNowbarTitle");
+    const artistEl = document.getElementById("mpMobileNowbarArtist");
+    const thumbEl = document.getElementById("mpMobileNowbarThumb");
+    const pauseBtn = document.getElementById("mpMobilePauseBtn");
+    const pauseIcon = pauseBtn?.querySelector("span");
+    if (titleEl) titleEl.textContent = track ? track.name : "—";
+    if (artistEl) {
+      if (track && track.name.includes(" - "))
+        artistEl.textContent = track.name.split(" - ")[0].trim();
+      else artistEl.textContent = track ? "Local Music" : "—";
+    }
+    if (thumbEl) {
+      if (track && currentAlbumCoverUrl) {
+        thumbEl.textContent = "";
+        thumbEl.style.backgroundImage = `url("${currentAlbumCoverUrl}")`;
+        thumbEl.style.backgroundSize = "cover";
+        thumbEl.style.backgroundPosition = "center";
+      } else {
+        thumbEl.textContent = track ? "♪" : "🎵";
+        thumbEl.style.backgroundImage = "";
+        thumbEl.style.backgroundSize = "";
+        thumbEl.style.backgroundPosition = "";
+      }
+    }
+    if (pauseIcon)
+      pauseIcon.textContent = audio.paused ? "play_arrow" : "pause";
+  }
+
+  window.togglePlay = function () {
+    if (!playlist.length) {
+      window.showAlert("Tambahin lagu dulu Rek! 🎵");
+      return;
+    }
+    if (audio.paused) {
       audio
         .play()
         .then(() => {
@@ -1236,23 +1296,9 @@ window.saveProfile = async () => {
           if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
           updatePlayerUI(true);
         })
-        .catch(console.error);
-    } else {
-      updatePlayerUI(false);
-    }
-  };
-
-  window.togglePlay = function () {
-    if (!playlist.length) {
-      showAlert("Tambahin lagu dulu Rek! 🎵");
-      return;
-    }
-    if (audio.paused) {
-      audio.play().then(() => {
-        initAudioCtx();
-        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
-        updatePlayerUI(true);
-      });
+        .catch(() => {
+          window.showAlert("Tekan lagi tombol play ya Rek 🙌");
+        });
     } else {
       audio.pause();
       updatePlayerUI(false);
@@ -1270,32 +1316,53 @@ window.saveProfile = async () => {
   };
   window.prevTrack = function () {
     if (!playlist.length) return;
+    if (audio.currentTime > 3) {
+      audio.currentTime = 0;
+      return;
+    }
     window.loadTrack((currentTrack - 1 + playlist.length) % playlist.length);
   };
-
   window.shuffleTrack = function () {
     isShuffle = !isShuffle;
     const btn = document.getElementById("shuffleBtn");
-    if (btn) {
-      btn.style.color = isShuffle ? "var(--accent3)" : "";
-      btn.style.borderColor = isShuffle ? "var(--accent3)" : "";
-    }
-    showAlert(isShuffle ? "Shuffle ON 🔀" : "Shuffle OFF", "success");
+    if (btn) btn.classList.toggle("active-mode", isShuffle);
+    window.showAlert(isShuffle ? "Shuffle ON 🔀" : "Shuffle OFF", "success");
   };
   window.toggleRepeat = function () {
     isRepeat = !isRepeat;
     audio.loop = isRepeat;
     const btn = document.getElementById("repeatBtn");
-    if (btn) {
-      btn.style.color = isRepeat ? "var(--accent)" : "";
-      btn.style.borderColor = isRepeat ? "var(--accent)" : "";
-    }
-    showAlert(isRepeat ? "Repeat ON 🔁" : "Repeat OFF", "success");
+    if (btn) btn.classList.toggle("active-mode", isRepeat);
+    window.showAlert(isRepeat ? "Repeat ON 🔁" : "Repeat OFF", "success");
   };
-  window.seekAudio = function (e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const ratio = (e.clientX - rect.left) / rect.width;
+  function getSeekRatioFromEvent(e, el) {
+    const rect = el.getBoundingClientRect();
+    const point =
+      e.touches?.[0] || e.changedTouches?.[0] || (e.clientX ? e : null);
+    if (!point || !rect.width) return 0;
+    return Math.max(0, Math.min(1, (point.clientX - rect.left) / rect.width));
+  }
+  function _setSeekSliderVisual(ratio) {
+    const slider = document.getElementById("seekSlider");
+    if (!slider) return;
+    const pct = Math.max(0, Math.min(100, ratio * 100));
+    // white filled track like YouTube Music
+    slider.style.background = `linear-gradient(to right, #ffffff 0%, #ffffff ${pct}%, rgba(255,255,255,0.16) ${pct}%, rgba(255,255,255,0.16) 100%)`;
+  }
+  function renderProgressPreviewByRatio(ratio) {
+    const slider = document.getElementById("seekSlider");
+    const ct = document.getElementById("currentTime");
+    if (slider) slider.value = String(Math.round(ratio * 1000));
+    _setSeekSliderVisual(ratio);
+    if (ct && isFinite(audio.duration))
+      ct.textContent = formatTime(ratio * audio.duration);
+  }
+  function commitSeekByRatio(ratio) {
     if (isFinite(audio.duration)) audio.currentTime = ratio * audio.duration;
+  }
+  window.seekAudio = function (e) {
+    // legacy hook (old div-based progress); no-op now
+    return;
   };
   window.setVolume = function (val) {
     audio.volume = parseFloat(val);
@@ -1304,6 +1371,32 @@ window.saveProfile = async () => {
     if (icon)
       icon.textContent =
         val == 0 ? "volume_off" : val < 0.4 ? "volume_down" : "volume_up";
+  };
+  window.toggleLike = function () {
+    const btn = document.getElementById("likeBtn");
+    if (!btn || !playlist[currentTrack]) return;
+    const track = playlist[currentTrack];
+    const isLiked = isFavTrack(track);
+    setFavTrack(track, !isLiked);
+    syncLikeBtn();
+    // Refresh playlist + favorites list
+    _lastRenderedPlaylistLength = -1;
+    _lastRenderedCurrentTrack = -1;
+    scheduleRenderPlaylist();
+    renderFavsList();
+    window.showAlert(isLiked ? "Dihapus dari favorit" : "Ditambah ke favorit 💜", "success");
+  };
+
+  window.toggleFavFromList = function (idx) {
+    const track = playlist[idx];
+    if (!track) return;
+    const isLiked = isFavTrack(track);
+    setFavTrack(track, !isLiked);
+    if (idx === currentTrack) syncLikeBtn();
+    _lastRenderedPlaylistLength = -1;
+    _lastRenderedCurrentTrack = -1;
+    scheduleRenderPlaylist();
+    renderFavsList();
   };
 
   window.addMusicFiles = function (files) {
@@ -1319,14 +1412,14 @@ window.saveProfile = async () => {
       const tmp = new Audio(url);
       tmp.addEventListener("loadedmetadata", () => {
         playlist[idx].duration = formatTime(tmp.duration);
-        renderPlaylist();
+        scheduleRenderPlaylist();
       });
       file.arrayBuffer().then((buf) => saveTrackToDB(id, name, buf, file.type));
       added++;
     });
     if (added > 0) {
-      showAlert(`${added} lagu ditambahkan rek! 🎵`, "success");
-      renderPlaylist();
+      window.showAlert(`${added} lagu ditambahkan rek! 🎵`, "success");
+      scheduleRenderPlaylist();
       if (currentTrack === -1) window.loadTrack(0);
     }
     const inp = document.getElementById("musicFileInput");
@@ -1352,10 +1445,29 @@ window.saveProfile = async () => {
       currentTrack--;
       localStorage.setItem("ngawi-track", currentTrack);
     }
-    renderPlaylist();
+    scheduleRenderPlaylist();
   };
 
-  function renderPlaylist() {
+  /* ── Debounced render — prevents desktop flickering ── */
+  let _renderTimer = null;
+  let _lastRenderedPlaylistLength = -1;
+  let _lastRenderedCurrentTrack = -1;
+
+  function scheduleRenderPlaylist() {
+    clearTimeout(_renderTimer);
+    _renderTimer = setTimeout(_doRenderPlaylist, 60);
+  }
+
+  function _doRenderPlaylist() {
+    // Guard: skip if nothing changed
+    if (
+      _lastRenderedPlaylistLength === playlist.length &&
+      _lastRenderedCurrentTrack === currentTrack
+    )
+      return;
+    _lastRenderedPlaylistLength = playlist.length;
+    _lastRenderedCurrentTrack = currentTrack;
+
     const container = document.getElementById("playlistContainer");
     const countEl = document.getElementById("trackCount");
     if (!container) return;
@@ -1363,18 +1475,22 @@ window.saveProfile = async () => {
       countEl.textContent =
         playlist.length > 0 ? `${currentTrack + 1}/${playlist.length}` : "0/0";
     if (playlist.length === 0) {
-      container.innerHTML = `<div class="playlist-empty"><span class="playlist-empty-icon">🎧</span>Belum ada musik nih Rek!<br>Tambahkan dari storage kamu dulu</div>`;
+      container.innerHTML = `<div class="playlist-empty"><span class="playlist-empty-icon">🎧</span>Belum ada musik nih Rek!<br>Ketuk tombol <strong>+</strong> di atas untuk tambah lagu</div>`;
       return;
     }
+    const isPlaying = !audio.paused;
     container.innerHTML = playlist
       .map(
         (t, i) => `
       <div class="playlist-item ${i === currentTrack ? "active" : ""}" onclick="window.loadTrack(${i})">
-        <div class="playlist-item-num">${i === currentTrack && !audio.paused ? "▶" : i + 1}</div>
+        <div class="playlist-item-num">${i === currentTrack && isPlaying ? "▶" : i + 1}</div>
         <div class="playlist-item-info">
           <div class="playlist-item-name">${escHtml(t.name)}</div>
           <div class="playlist-item-dur">${t.duration}</div>
         </div>
+        <button class="playlist-item-love ${isFavTrack(t) ? "is-liked" : ""}" onclick="event.stopPropagation();window.toggleFavFromList(${i})" title="${isFavTrack(t) ? "Hapus dari Favorit" : "Tambah ke Favorit"}">
+          <span class="material-symbols-rounded">${isFavTrack(t) ? "favorite" : "favorite_border"}</span>
+        </button>
         <button class="playlist-item-del" onclick="event.stopPropagation();window.removeTrack(${i})" title="Hapus">
           <span class="material-symbols-rounded">close</span>
         </button>
@@ -1393,35 +1509,167 @@ window.saveProfile = async () => {
     const miniName = document.getElementById("miniSongName");
     if (titleEl)
       titleEl.textContent = track ? track.name : "Pilih musik dulu Rek!";
-    if (artEl) artEl.textContent = track ? `Local · ${track.name}` : "— · —";
+    let artistDisplay = "— · —";
+    if (track) {
+      if (track.name.includes(" - ")) {
+        const parts = track.name.split(" - ");
+        artistDisplay = parts[0].trim();
+      } else artistDisplay = "Local Music";
+    }
+    if (artEl) artEl.textContent = artistDisplay;
     if (ppBtn)
       ppBtn.querySelector("span").textContent = playing
         ? "pause"
         : "play_arrow";
-    if (albumEl) albumEl.classList.toggle("spinning", !!playing);
+    if (albumEl) albumEl.classList.toggle("playing", !!playing);
     if (track && playing && mini && miniName) {
       mini.classList.add("visible");
+      mini.classList.add("playing");
       miniName.textContent = track.name;
     } else if (!playing && mini) {
       mini.classList.remove("visible");
+      mini.classList.remove("playing");
     }
     const countEl = document.getElementById("trackCount");
     if (countEl)
       countEl.textContent =
         playlist.length > 0 ? `${currentTrack + 1}/${playlist.length}` : "0/0";
-    renderPlaylist();
+    // Force re-render by resetting guard
+    _lastRenderedPlaylistLength = -1;
+    _lastRenderedCurrentTrack = -1;
+    scheduleRenderPlaylist();
+    _updateSideMiniInfo();
+    syncLikeBtn();
+    renderFavsList();
+
+    const sideCol = document.getElementById("mpSideCol");
+    if (sideCol) sideCol.classList.toggle("has-track", !!track);
   }
 
+  /* ── Spotify-style lyrics sync on timeupdate ── */
   audio.addEventListener("timeupdate", () => {
     if (!audio.duration || !isFinite(audio.duration)) return;
-    const pct = (audio.currentTime / audio.duration) * 100;
-    const pf = document.getElementById("progressFill");
+    const ratio = audio.currentTime / audio.duration;
     const ct = document.getElementById("currentTime");
     const tt = document.getElementById("totalTime");
-    if (pf) pf.style.width = pct + "%";
-    if (ct) ct.textContent = formatTime(audio.currentTime);
+    if (!isProgressDragging) {
+      const slider = document.getElementById("seekSlider");
+      if (slider) slider.value = String(Math.round(ratio * 1000));
+      _setSeekSliderVisual(ratio);
+      if (ct) ct.textContent = formatTime(audio.currentTime);
+    }
     if (tt) tt.textContent = formatTime(audio.duration);
+    if (syncedLines.length > 0) {
+      const currentTime = audio.currentTime;
+      let activeIdx = -1;
+      for (let i = syncedLines.length - 1; i >= 0; i--) {
+        if (currentTime >= syncedLines[i].time) {
+          activeIdx = i;
+          break;
+        }
+      }
+      if (activeIdx !== lastActiveLine) {
+        lastActiveLine = activeIdx;
+        updateLyricsHighlight(activeIdx);
+      }
+    }
   });
+
+  audio.addEventListener("loadedmetadata", () => {
+    const tt = document.getElementById("totalTime");
+    const ct = document.getElementById("currentTime");
+    const slider = document.getElementById("seekSlider");
+    if (slider) slider.value = "0";
+    _setSeekSliderVisual(0);
+    if (ct) ct.textContent = "0:00";
+    if (tt && isFinite(audio.duration)) tt.textContent = formatTime(audio.duration);
+  });
+
+  function updateLyricsHighlight(activeIdx) {
+    const lyricsContent = document.querySelector(
+      "#lyricsContainer .lyrics-content",
+    );
+    if (!lyricsContent) return;
+    const lines = lyricsContent.querySelectorAll(".lyrics-line");
+    lines.forEach((line, i) => {
+      line.classList.remove("lyrics-active", "lyrics-past", "lyrics-future");
+      if (i < activeIdx) line.classList.add("lyrics-past");
+      else if (i === activeIdx) line.classList.add("lyrics-active");
+      else line.classList.add("lyrics-future");
+    });
+    const sideCol = document.getElementById("mpSideCol");
+    const isLyricsTabActive = sideCol?.dataset.activeTab === "lyrics";
+    if (!isLyricsTabActive) return;
+    // Mobile: jangan auto-scroll kalau tab panel belum kebuka (biar gak "nyeret" UI)
+    const isDesktop = window.innerWidth >= 1025;
+    if (!isDesktop && sideCol && !sideCol.classList.contains("mobile-open"))
+      return;
+    if (activeIdx >= 0 && activeIdx < lines.length) {
+      const activeLine = lines[activeIdx];
+      const container = document.getElementById("lyricsContainer");
+      if (container && activeLine) {
+        // Extra safety: kalau element lyrics content lagi "disembunyiin" via pointer-events (desktop slide),
+        // skip scroll biar gak bikin layout aneh di tab lain.
+        const pe = window.getComputedStyle(container).pointerEvents;
+        if (pe === "none") return;
+        activeLine.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }
+
+  function bindLyricsSeekInteractions(isSynced) {
+    const lyricsContainer = document.getElementById("lyricsContainer");
+    if (!lyricsContainer) return;
+    lyricsContainer.querySelectorAll(".lyrics-line").forEach((lineEl) => {
+      lineEl.style.cursor = isSynced ? "pointer" : "default";
+      lineEl.onclick = null;
+      if (!isSynced) return;
+      lineEl.onclick = () => {
+        const idx = Number(lineEl.dataset.idx);
+        if (!Number.isFinite(idx)) return;
+        const target = syncedLines[idx]?.time;
+        if (!Number.isFinite(target)) return;
+        audio.currentTime = Math.max(0, target);
+        lastActiveLine = -1;
+        updateLyricsHighlight(idx);
+      };
+    });
+  }
+
+  function initProgressSeekInteractions() {
+    const slider = document.getElementById("seekSlider");
+    if (!slider) return;
+    const ratioFromSlider = () => {
+      const v = Number(slider.value);
+      if (!Number.isFinite(v)) return 0;
+      return Math.max(0, Math.min(1, v / 1000));
+    };
+
+    slider.addEventListener("pointerdown", () => {
+      if (!isFinite(audio.duration)) return;
+      isProgressDragging = true;
+    });
+    slider.addEventListener("pointerup", () => {
+      if (!isFinite(audio.duration)) return;
+      const r = ratioFromSlider();
+      isProgressDragging = false;
+      renderProgressPreviewByRatio(r);
+      commitSeekByRatio(r);
+    });
+    slider.addEventListener("input", () => {
+      if (!isFinite(audio.duration)) return;
+      const r = ratioFromSlider();
+      renderProgressPreviewByRatio(r);
+    });
+    slider.addEventListener("change", () => {
+      if (!isFinite(audio.duration)) return;
+      const r = ratioFromSlider();
+      isProgressDragging = false;
+      renderProgressPreviewByRatio(r);
+      commitSeekByRatio(r);
+    });
+  }
+
   audio.addEventListener("ended", () => {
     if (!isRepeat) {
       if (isShuffle)
@@ -1439,25 +1687,395 @@ window.saveProfile = async () => {
   const volSlider = document.getElementById("volSlider");
   if (volSlider) volSlider.value = audio.volume;
 
+  /* ── Toggle music panel ── */
   window.toggleMusicPanel = function () {
     const panel = document.getElementById("musicPanel");
     const btn = document.getElementById("musicToggleBtn");
-    const chat = document.getElementById("chatBox");
-    const bottom = document.querySelector(".bottom");
     if (!panel) return;
     const isOpen = panel.classList.contains("open");
     panel.classList.toggle("open");
     btn?.classList.toggle("music-active", !isOpen);
     if (!isOpen) {
-      resizeCanvas();
-      setTimeout(() => {
-        const panelH = panel.offsetHeight;
-        if (chat) chat.style.paddingBottom = panelH + 20 + "px";
-        if (bottom) bottom.style.bottom = panelH + "px";
-      }, 100);
+      setTimeout(resizeCanvas, 120);
+    }
+    // Close mobile tab when closing panel
+    if (isOpen) {
+      window.closeMobileTab();
+    }
+  };
+
+  // Click on mini header song name -> open music panel
+  window.openMusicFromMini = function () {
+    const panel = document.getElementById("musicPanel");
+    if (!panel) return;
+    if (!panel.classList.contains("open")) window.toggleMusicPanel();
+  };
+
+  /* ── Show/hide mobile backdrop ── */
+  function _showBackdrop() {
+    const bd = document.getElementById("mpSideBackdrop");
+    if (bd) bd.classList.add("active");
+  }
+  function _hideBackdrop() {
+    const bd = document.getElementById("mpSideBackdrop");
+    if (bd) bd.classList.remove("active");
+  }
+
+  /* ── Close mobile tab overlay ── */
+  window.closeMobileTab = function (evtOrForce) {
+    const sideCol = document.getElementById("mpSideCol");
+    const forceClose = evtOrForce === true;
+    if (evtOrForce && !forceClose) return;
+    if (sideCol) sideCol.classList.remove("mobile-open");
+    _hideBackdrop();
+    currentMobileTab = null;
+    _updateTabBtnStates();
+  };
+
+  window.handleMobileNowbarTap = function (evt) {
+    if (!evt) return;
+    if (evt.target?.closest?.(".mp-mobile-icon-btn")) return;
+    window.closeMobileTab(true);
+  };
+
+  function _syncTabContentState(activeTab) {
+    const queueContent = document.getElementById("tabQueueContent");
+    const lyricsContent = document.getElementById("tabLyricsContent");
+    const favsContent = document.getElementById("tabFavsContent");
+    if (queueContent)
+      queueContent.classList.toggle("active-tab", activeTab === "queue");
+    if (lyricsContent)
+      lyricsContent.classList.toggle("active-tab", activeTab === "lyrics");
+    if (favsContent)
+      favsContent.classList.toggle("active-tab", activeTab === "favs");
+  }
+
+  /* ── Update active state of tab buttons ── */
+  function _updateTabBtnStates() {
+    const isDesktop = window.innerWidth >= 1025;
+    const sideCol = document.getElementById("mpSideCol");
+
+    const qBtn = document.getElementById("tabQueueBtn");
+    const lBtn = document.getElementById("tabLyricsBtn");
+    const fBtn = document.getElementById("tabFavsBtn");
+    const qBtnD = document.getElementById("tabQueueBtnD");
+    const lBtnD = document.getElementById("tabLyricsBtnD");
+    const fBtnD = document.getElementById("tabFavsBtnD");
+
+    if (isDesktop) {
+      const activeTab = sideCol?.dataset.activeTab || "queue";
+      if (qBtnD) qBtnD.classList.toggle("active", activeTab === "queue");
+      if (lBtnD) lBtnD.classList.toggle("active", activeTab === "lyrics");
+      if (fBtnD) fBtnD.classList.toggle("active", activeTab === "favs");
+      // Reset mobile bottom bar
+      if (qBtn) qBtn.classList.remove("active");
+      if (lBtn) lBtn.classList.remove("active");
+      if (fBtn) fBtn.classList.remove("active");
     } else {
-      if (chat) chat.style.paddingBottom = "180px";
-      if (bottom) bottom.style.bottom = "0";
+      // Mobile bottom bar buttons
+      if (qBtn) qBtn.classList.toggle("active", currentMobileTab === "queue");
+      if (lBtn) lBtn.classList.toggle("active", currentMobileTab === "lyrics");
+      if (fBtn) fBtn.classList.toggle("active", currentMobileTab === "favs");
+      // In-panel tab buttons
+      if (qBtnD) qBtnD.classList.toggle("active", currentMobileTab === "queue");
+      if (lBtnD)
+        lBtnD.classList.toggle("active", currentMobileTab === "lyrics");
+      if (fBtnD) fBtnD.classList.toggle("active", currentMobileTab === "favs");
+    }
+  }
+
+  /* ── Tab switcher ── */
+  window.switchMusicTab = function (tab) {
+    const sideCol = document.getElementById("mpSideCol");
+    const isDesktop = window.innerWidth >= 1025;
+    const trackName = window._currentTrackName;
+    if (!sideCol) return;
+
+    if (isDesktop) {
+      sideCol.dataset.activeTab = tab;
+      _syncTabContentState(tab);
+      if (tab === "lyrics") {
+        if (trackName && !window._lyricsLoaded) window.fetchLyrics(trackName);
+      }
+    } else {
+      currentMobileTab = tab;
+      sideCol.dataset.activeTab = tab;
+      _syncTabContentState(tab);
+      sideCol.classList.add("mobile-open");
+      _showBackdrop();
+      if (tab === "lyrics" && trackName && !window._lyricsLoaded)
+        window.fetchLyrics(trackName);
+    }
+    _updateTabBtnStates();
+  };
+
+  function initMobileMusicTabSwipe() {
+    const sideCol = document.getElementById("mpSideCol");
+    if (!sideCol) return;
+    if (!sideCol.dataset.activeTab) sideCol.dataset.activeTab = "queue";
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+    let allowSwipeSwitch = false;
+    const minDist = 44;
+    const maxVertical = 28;
+
+    sideCol.addEventListener(
+      "touchstart",
+      (e) => {
+        const t = e.touches?.[0];
+        if (!t) return;
+        tracking = true;
+        startX = t.clientX;
+        startY = t.clientY;
+        const target = e.target;
+        const inLyrics = target?.closest?.("#lyricsContainer");
+        const inQueueList = target?.closest?.("#playlistContainer");
+        allowSwipeSwitch = !(inLyrics || inQueueList);
+      },
+      { passive: true },
+    );
+
+    sideCol.addEventListener(
+      "touchend",
+      (e) => {
+        if (!tracking || window.innerWidth >= 1025) return;
+        tracking = false;
+        if (!allowSwipeSwitch) return;
+        if (!sideCol.classList.contains("mobile-open")) return;
+        const t = e.changedTouches?.[0];
+        if (!t) return;
+        const dx = t.clientX - startX;
+        const dy = Math.abs(t.clientY - startY);
+        if (dy > maxVertical || Math.abs(dx) < minDist) return;
+
+        if (dx < 0 && currentMobileTab === "queue") {
+          window.switchMusicTab("lyrics");
+        } else if (dx < 0 && currentMobileTab === "lyrics") {
+          window.switchMusicTab("favs");
+        } else if (dx > 0 && currentMobileTab === "favs") {
+          window.switchMusicTab("lyrics");
+        } else if (dx > 0 && currentMobileTab === "lyrics") {
+          window.switchMusicTab("queue");
+        }
+      },
+      { passive: true },
+    );
+  }
+  initMobileMusicTabSwipe();
+
+  function initMusicTabInteraction() {
+    document.querySelectorAll(".yt-tab-btn").forEach((btn) => {
+      btn.addEventListener(
+        "touchstart",
+        (e) => {
+          e.stopPropagation();
+          lastTabTouchAt = Date.now();
+          btn.classList.add("tap-active");
+        },
+        { passive: true },
+      );
+      btn.addEventListener(
+        "touchend",
+        () => {
+          lastTabTouchAt = Date.now();
+          btn.classList.remove("tap-active");
+        },
+        { passive: true },
+      );
+      btn.addEventListener("click", (e) => {
+        lastTabTouchAt = Date.now();
+        e.stopPropagation();
+      });
+    });
+  }
+  initMusicTabInteraction();
+
+  /* ── Restore display state on resize ── */
+  window.addEventListener("resize", () => {
+    const isDesktop = window.innerWidth >= 1025;
+    const sideCol = document.getElementById("mpSideCol");
+    if (isDesktop) {
+      if (sideCol) sideCol.classList.remove("mobile-open");
+      _hideBackdrop();
+      currentMobileTab = null;
+      if (sideCol && !sideCol.dataset.activeTab)
+        sideCol.dataset.activeTab = "queue";
+    } else if (sideCol && !currentMobileTab && sideCol.dataset.activeTab) {
+      currentMobileTab = sideCol.dataset.activeTab;
+    }
+    if (sideCol) _syncTabContentState(sideCol.dataset.activeTab || "queue");
+    _updateTabBtnStates();
+  });
+
+  /* ── Lyrics fetcher — Spotify style with LRC sync ── */
+  window.fetchLyrics = async function (trackName) {
+    const lyricsContainer = document.getElementById("lyricsContainer");
+    if (!lyricsContainer) return;
+    if (window._lyricsLoadedFor === trackName) return;
+    window._lyricsLoadedFor = trackName;
+
+    lyricsContainer.innerHTML = `
+      <div class="lyrics-loading">
+        <div class="spin" style="display:block;border-color:var(--glass-border);border-top-color:var(--accent);width:28px;height:28px;border-width:3px"></div>
+        <p>Nyari lirik untuk <strong>${escHtml(trackName)}</strong>…</p>
+      </div>`;
+
+    try {
+      let artist = "",
+        title = trackName;
+      if (trackName.includes(" - ")) {
+        const parts = trackName.split(" - ");
+        artist = parts[0].trim();
+        title = parts.slice(1).join(" - ").trim();
+      }
+      title = title
+        .replace(/\s*$feat[^)]*$/gi, "")
+        .replace(/\s*$.*?$/gi, "")
+        .replace(/\s*(feat|ft)\..*$/i, "")
+        .replace(/\s*-\s*(Official.*|Lyrics.*|Audio.*)$/i, "")
+        .trim();
+
+      let lyricsText = null,
+        syncedLrc = null,
+        sourceLabel = "";
+
+      // ATTEMPT 1: lrclib.net with artist + title
+      if (artist && title) {
+        try {
+          const url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artist)}&track_name=${encodeURIComponent(title)}`;
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.syncedLyrics && data.syncedLyrics.trim().length > 20) {
+              syncedLrc = data.syncedLyrics;
+              lyricsText = data.plainLyrics || null;
+              sourceLabel = "lrclib.net (synced)";
+            } else if (
+              data.plainLyrics &&
+              data.plainLyrics.trim().length > 20
+            ) {
+              lyricsText = data.plainLyrics;
+              sourceLabel = "lrclib.net";
+            }
+          }
+        } catch (_) {}
+      }
+
+      // ATTEMPT 2: lrclib.net search
+      if (!lyricsText && !syncedLrc && title) {
+        try {
+          const q = artist ? `${artist} ${title}` : title;
+          const url = `https://lrclib.net/api/search?q=${encodeURIComponent(q)}`;
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) {
+            const results = await res.json();
+            if (Array.isArray(results) && results.length > 0) {
+              const best = results[0];
+              if (best.syncedLyrics && best.syncedLyrics.trim().length > 20) {
+                syncedLrc = best.syncedLyrics;
+                lyricsText = best.plainLyrics || null;
+                sourceLabel = "lrclib.net (synced)";
+                if (!artist) artist = best.artistName || "";
+                if (title === trackName) title = best.trackName || title;
+              } else if (
+                best.plainLyrics &&
+                best.plainLyrics.trim().length > 20
+              ) {
+                lyricsText = best.plainLyrics;
+                sourceLabel = "lrclib.net";
+                if (!artist) artist = best.artistName || "";
+                if (title === trackName) title = best.trackName || title;
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      // ATTEMPT 3: lyrics.ovh fallback
+      if (!lyricsText && !syncedLrc && artist && title) {
+        try {
+          const res = await fetch(
+            `https://lyrics.ovh/v1/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`,
+            { signal: AbortSignal.timeout(8000) },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            if (data.lyrics && data.lyrics.trim().length > 20) {
+              lyricsText = data.lyrics;
+              sourceLabel = "lyrics.ovh";
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (syncedLrc || lyricsText) {
+        window._lyricsLoaded = true;
+        if (syncedLrc) {
+          syncedLines = parseLRC(syncedLrc);
+          lastActiveLine = -1;
+        } else syncedLines = [];
+
+        const displayLines = syncedLrc
+          ? syncedLines.map((l) => l.text)
+          : lyricsText.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+
+        let html = `
+          <div class="lyrics-title-row">
+            <div class="lyrics-song-name">${escHtml(title || trackName)}</div>
+            <div class="lyrics-source">${escHtml(artist || "Unknown Artist")} · ${sourceLabel}</div>
+          </div>
+          <div class="lyrics-content">`;
+
+        displayLines.forEach((line, i) => {
+          const trimmed = typeof line === "string" ? line.trim() : line;
+          if (trimmed === "") {
+            html += `<span class="lyrics-line-break"></span>`;
+          } else {
+            const cls = syncedLrc ? "lyrics-line lyrics-future" : "lyrics-line";
+            html += `<span class="${cls}" data-idx="${i}">${escHtml(trimmed)}</span>`;
+          }
+        });
+        html += `</div>`;
+        lyricsContainer.innerHTML = html;
+        bindLyricsSeekInteractions(!!syncedLrc && syncedLines.length > 0);
+
+        if (!audio.paused && syncedLines.length > 0) {
+          const currentTime = audio.currentTime;
+          let activeIdx = -1;
+          for (let i = syncedLines.length - 1; i >= 0; i--) {
+            if (currentTime >= syncedLines[i].time) {
+              activeIdx = i;
+              break;
+            }
+          }
+          lastActiveLine = activeIdx;
+          updateLyricsHighlight(activeIdx);
+        }
+      } else {
+        window._lyricsLoaded = false;
+        window._lyricsLoadedFor = null;
+        syncedLines = [];
+        lyricsContainer.innerHTML = `
+          <div class="lyrics-empty">
+            <span class="lyrics-empty-icon">😔</span>
+            <p>Lirik tidak ditemukan Rek<br>
+            <small style="font-size:12px;opacity:0.7;line-height:2">
+              Tips: ganti nama file jadi<br>
+              <strong>"Artist - Judul Lagu.mp3"</strong><br>
+              Contoh: <em>Nadhif Basalamah - Kota Ini.mp3</em>
+            </small></p>
+          </div>`;
+      }
+    } catch (e) {
+      window._lyricsLoadedFor = null;
+      syncedLines = [];
+      lyricsContainer.innerHTML = `
+        <div class="lyrics-empty">
+          <span class="lyrics-empty-icon">😔</span>
+          <p>Gagal nyari lirik Rek<br>
+          <small style="font-size:12px;opacity:0.7">Cek koneksi internet lu</small></p>
+        </div>`;
     }
   };
 
@@ -1466,17 +2084,21 @@ window.saveProfile = async () => {
     return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   }
   function escHtml(str) {
-    return str
+    return String(str)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
   }
-  function showAlert(msg, type = "error") {
-    if (window.showAlert) window.showAlert(msg, type);
-  }
 
   document.addEventListener("DOMContentLoaded", () => {
+    loadFavs();
     restoreState();
+    initProgressSeekInteractions();
+    const sideCol = document.getElementById("mpSideCol");
+    if (sideCol) _syncTabContentState(sideCol.dataset.activeTab || "queue");
+    _updateTabBtnStates();
+    syncLikeBtn();
+    renderFavsList();
   });
 })();
 
@@ -1629,7 +2251,6 @@ window.saveProfile = async () => {
       else handleJump();
     }
   }
-
   function handleTap() {
     if (gameState === "idle" || gameState === "dead") startGame();
     else handleJump();
@@ -1685,13 +2306,11 @@ window.saveProfile = async () => {
       localStorage.setItem("ngawi-best", bestScore);
     }
     speed = Math.min(12, 4 + Math.floor(score / 200) * 0.5);
-
     player.frameTimer++;
     if (player.frameTimer > 8) {
       player.frame = (player.frame + 1) % 2;
       player.frameTimer = 0;
     }
-
     if (isJumping) {
       player.y += jumpVel;
       jumpVel += 0.7;
@@ -1703,7 +2322,6 @@ window.saveProfile = async () => {
       }
     }
     if (player.invincible > 0) player.invincible--;
-
     if (
       frameCount % Math.max(60, 110 - Math.floor(score / 100) * 5) === 0 &&
       obstacles.length < 4
@@ -1727,7 +2345,6 @@ window.saveProfile = async () => {
         r: 6,
         animT: Math.random() * Math.PI * 2,
       });
-
     obstacles = obstacles.filter((o) => o.x > -40);
     obstacles.forEach((o) => {
       o.x -= speed;
@@ -1788,237 +2405,272 @@ window.saveProfile = async () => {
     const sub = document.getElementById("gameOverlaySub");
     const btn = document.getElementById("gameStartBtn");
     if (overlay && title && sub && btn) {
-      title.textContent = `GAME OVER! ${score >= bestScore ? "👑 NEW BEST!" : ""}`;
-      sub.textContent = `Score: ${score} · Best: ${bestScore}`;
-      btn.textContent = "↺ MAIN LAGI";
+      title.textContent = "GAME OVER 💀";
+      sub.textContent = `Skor lu: ${score} · Best: ${bestScore}`;
+      btn.textContent = "▶ MAIN LAGI";
       overlay.classList.remove("hidden");
     }
-    updateScoreDisplay();
   }
 
-  function draw() {
-    ctx.clearRect(0, 0, GAME_W, GAME_H);
-    const isDark = document.body.getAttribute("data-theme") !== "light";
-    const skyGrd = ctx.createLinearGradient(0, 0, 0, groundY);
-    if (isDark) {
-      skyGrd.addColorStop(0, "#06060f");
-      skyGrd.addColorStop(1, "#0d0d2a");
-    } else {
-      skyGrd.addColorStop(0, "#e8e0ff");
-      skyGrd.addColorStop(1, "#c4b5fd");
-    }
-    ctx.fillStyle = skyGrd;
-    ctx.fillRect(0, 0, GAME_W, groundY);
-
-    stars.forEach((s) => {
-      s.twinkle += 0.04;
-      const alpha = 0.4 + Math.sin(s.twinkle) * 0.4;
-      ctx.fillStyle = isDark
-        ? `rgba(167,139,255,${alpha})`
-        : `rgba(109,40,217,${alpha * 0.3})`;
-      ctx.fillRect(Math.floor(s.x), Math.floor(s.y), s.size, s.size);
-    });
-    clouds.forEach((c) => drawCloud(c.x, c.y, c.w, isDark));
-
-    const grdGrd = ctx.createLinearGradient(0, groundY, 0, GAME_H);
-    if (isDark) {
-      grdGrd.addColorStop(0, "#1a0f3a");
-      grdGrd.addColorStop(1, "#0d0820");
-    } else {
-      grdGrd.addColorStop(0, "#7c3aed");
-      grdGrd.addColorStop(1, "#5b21b6");
-    }
-    ctx.fillStyle = grdGrd;
-    ctx.fillRect(0, groundY, GAME_W, GAME_H - groundY);
-    ctx.fillStyle = isDark ? "#a78bff" : "#c4b5fd";
-    for (let x = -((frameCount * speed) | 0) % 16; x < GAME_W; x += 16)
-      ctx.fillRect(x, groundY, 8, 2);
-
-    coins.forEach((c) => {
-      const bob = Math.sin(c.animT) * 3;
-      drawCoin(c.x, c.y + bob, c.r);
-    });
-    obstacles.forEach((o) => drawObstacle(o));
-    drawPlayer();
-
-    particles.forEach((p) => {
-      ctx.globalAlpha = p.life / p.maxLife;
-      ctx.fillStyle = p.color;
-      ctx.fillRect(
-        Math.floor(p.x),
-        Math.floor(p.y),
-        Math.ceil(p.size),
-        Math.ceil(p.size),
-      );
-    });
-    ctx.globalAlpha = 1;
-
-    ctx.fillStyle = isDark ? "rgba(167,139,255,0.7)" : "rgba(109,40,217,0.7)";
-    ctx.font = '7px "Press Start 2P", monospace';
-    ctx.textAlign = "right";
-    ctx.fillText(`${score}`, GAME_W - 8, 14);
-    ctx.textAlign = "left";
-  }
+  /* ── Draw idle screen ── */
   function drawIdle() {
-    draw();
-  }
-  function drawCloud(x, y, w, isDark) {
-    ctx.fillStyle = isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.5)";
-    const h = 14;
-    ctx.fillRect(x + 8, y, w - 16, h);
-    ctx.fillRect(x + 4, y + 4, w - 8, h - 4);
-    ctx.fillRect(x, y + 8, w, h - 8);
-  }
-  function drawPixelArt(sprite, x, y, colors, tileSize) {
-    const ts = tileSize || TILE;
-    sprite.forEach((row, ry) => {
-      [...row].forEach((px, rx) => {
-        if (px === "X") {
-          ctx.fillStyle = colors[(ry + rx) % colors.length];
-          ctx.fillRect(
-            Math.floor(x + rx * ts),
-            Math.floor(y + ry * ts),
-            ts,
-            ts,
-          );
-        } else if (px === "O") {
-          ctx.fillStyle = COLOR_PLAYER_O;
-          ctx.fillRect(
-            Math.floor(x + rx * ts),
-            Math.floor(y + ry * ts),
-            ts,
-            ts,
-          );
-        }
-      });
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, GAME_W, GAME_H);
+    ctx.fillStyle = "#0a0a1a";
+    ctx.fillRect(0, 0, GAME_W, GAME_H);
+    stars.forEach((s) => {
+      s.twinkle += 0.05;
+      const alpha = 0.4 + Math.sin(s.twinkle) * 0.3;
+      ctx.fillStyle = `rgba(200,200,255,${alpha})`;
+      ctx.fillRect(s.x, s.y, s.size, s.size);
     });
+    ctx.fillStyle = "#1e1b4b";
+    ctx.fillRect(0, groundY, GAME_W, GAME_H - groundY);
+    ctx.fillStyle = "#4f46e5";
+    ctx.fillRect(0, groundY, GAME_W, 2);
+    drawPixelSprite(
+      PLAYER_SPRITES[0],
+      player.x,
+      player.y,
+      COLOR_PLAYER,
+      COLOR_PLAYER_O,
+      TILE,
+    );
   }
-  function drawPlayer() {
-    if (player.invincible > 0 && Math.floor(player.invincible / 6) % 2 === 0)
-      return;
+
+  /* ── Main draw ── */
+  function draw() {
+    if (!canvas || !ctx) return;
+    ctx.clearRect(0, 0, GAME_W, GAME_H);
+
+    // Sky
+    ctx.fillStyle = "#0a0a1a";
+    ctx.fillRect(0, 0, GAME_W, GAME_H);
+
+    // Stars
+    stars.forEach((s) => {
+      s.twinkle += 0.02;
+      const alpha =
+        gameState === "playing"
+          ? 0.2 + Math.sin(s.twinkle) * 0.1
+          : 0.4 + Math.sin(s.twinkle) * 0.3;
+      ctx.fillStyle = `rgba(200,200,255,${alpha})`;
+      ctx.fillRect(s.x, s.y, s.size, s.size);
+    });
+
+    // Clouds
+    clouds.forEach((c) => {
+      ctx.fillStyle = "rgba(255,255,255,0.05)";
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(c.x, c.y, c.w, 14, 7);
+      else ctx.rect(c.x, c.y, c.w, 14);
+      ctx.fill();
+    });
+
+    // Ground
+    ctx.fillStyle = "#1e1b4b";
+    ctx.fillRect(0, groundY, GAME_W, GAME_H - groundY);
+    ctx.fillStyle = "#4f46e5";
+    ctx.fillRect(0, groundY, GAME_W, 2);
+    for (let gx = 0; gx < GAME_W; gx += 16) {
+      ctx.fillStyle = "rgba(99,102,241,0.3)";
+      ctx.fillRect(gx, groundY + 4, 8, 2);
+    }
+
+    // Coins
+    coins.forEach(drawCoin);
+
+    // Obstacles
+    obstacles.forEach(drawObstacle);
+
+    // Player
     const sprite = isJumping
       ? PLAYER_JUMP_SPRITE
       : PLAYER_SPRITES[player.frame];
-    const colors = player.dead
-      ? ["#6b7280", "#4b5563", "#374151"]
-      : COLOR_PLAYER;
-    if (!player.dead) {
-      ctx.fillStyle = "rgba(124,58,237,0.3)";
+    const blink =
+      player.invincible > 0 && Math.floor(player.invincible / 6) % 2 === 0;
+    ctx.globalAlpha = blink ? 0.35 : 1;
+    drawPixelSprite(
+      sprite,
+      player.x,
+      player.y,
+      COLOR_PLAYER,
+      COLOR_PLAYER_O,
+      TILE,
+    );
+    ctx.globalAlpha = 1;
+
+    // Particles
+    particles.forEach((p) => {
+      ctx.globalAlpha = p.life / p.maxLife;
+      ctx.fillStyle = p.color;
       ctx.beginPath();
-      ctx.ellipse(
-        player.x + player.w / 2,
-        groundY + 3,
-        player.w * 0.4,
-        3,
-        0,
-        0,
-        Math.PI * 2,
-      );
+      if (ctx.roundRect)
+        ctx.roundRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size, 2);
+      else ctx.rect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
       ctx.fill();
-    }
-    drawPixelArt(sprite, player.x, player.y, colors);
+    });
+    ctx.globalAlpha = 1;
   }
+
+  /* ── Pixel sprite renderer ── */
+  function drawPixelSprite(sprite, x, y, colors, colorO, tileSize) {
+    if (!ctx || !sprite) return;
+    sprite.forEach((row, ry) => {
+      for (let rx = 0; rx < row.length; rx++) {
+        const ch = row[rx];
+        if (ch === "X") {
+          const ci = Math.min(
+            Math.floor((ry / sprite.length) * colors.length),
+            colors.length - 1,
+          );
+          ctx.fillStyle = colors[ci];
+          ctx.fillRect(
+            x + rx * tileSize,
+            y + ry * tileSize,
+            tileSize,
+            tileSize,
+          );
+        } else if (ch === "O") {
+          ctx.fillStyle = colorO;
+          ctx.fillRect(
+            x + rx * tileSize,
+            y + ry * tileSize,
+            tileSize,
+            tileSize,
+          );
+        }
+      }
+    });
+  }
+
+  /* ── Draw obstacle ── */
   function drawObstacle(o) {
-    const colors =
-      o.type === "cactus"
-        ? COLOR_OBS_CACTUS
-        : o.type === "rock"
-          ? COLOR_OBS_ROCK
-          : COLOR_OBS_BIRD;
-    if (o.type === "bird")
-      drawPixelArt(
-        OBS_SPRITES.bird,
-        o.x,
-        o.y + Math.sin(o.animT * 0.2) * 3,
-        colors,
-        TILE,
-      );
-    else drawPixelArt(OBS_SPRITES[o.type], o.x, o.y, colors, TILE);
+    if (!ctx) return;
+    let colors;
+    if (o.type === "cactus") colors = COLOR_OBS_CACTUS;
+    else if (o.type === "rock") colors = COLOR_OBS_ROCK;
+    else colors = COLOR_OBS_BIRD;
+
+    if (o.type === "bird") {
+      // Animate wings
+      const flapUp = Math.floor(o.animT / 10) % 2 === 0;
+      const wingSprite = flapUp
+        ? OBS_SPRITES.bird
+        : ["......", ".XXXX.", "XXXXXX", ".X..X.", "......"];
+      drawPixelSprite(wingSprite, o.x, o.y, colors, "#fff", TILE);
+    } else {
+      drawPixelSprite(OBS_SPRITES[o.type], o.x, o.y, colors, "#fff", TILE);
+    }
   }
-  function drawCoin(x, y, r) {
-    const sz = r * 2;
-    ctx.fillStyle = COLOR_COIN[0];
-    ctx.fillRect(x - r + 2, y - r, sz - 4, sz);
-    ctx.fillRect(x - r, y - r + 2, sz, sz - 4);
-    ctx.fillStyle = COLOR_COIN[2];
-    ctx.fillRect(x - r + 4, y - r + 2, sz - 8, sz - 4);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(x - r + 2, y - r + 2, 2, 2);
+
+  /* ── Draw coin ── */
+  function drawCoin(c) {
+    if (!ctx) return;
+    const pulse = Math.sin(c.animT * 3) * 0.25 + 0.75;
+    const r = c.r * pulse;
+    const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r * 2);
+    grd.addColorStop(0, COLOR_COIN[2]);
+    grd.addColorStop(0.5, COLOR_COIN[0]);
+    grd.addColorStop(1, COLOR_COIN[1]);
+    ctx.fillStyle = grd;
+    ctx.beginPath();
+    ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+    ctx.fill();
+    // Shine
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.beginPath();
+    ctx.arc(c.x - r * 0.3, c.y - r * 0.3, r * 0.3, 0, Math.PI * 2);
+    ctx.fill();
   }
+
+  /* ── Particle spawners ── */
   function spawnJumpParticles() {
-    for (let i = 0; i < 6; i++)
+    const colors = ["#c084fc", "#a855f7", "#67e8f9", "#f472b6"];
+    for (let i = 0; i < 7; i++) {
+      const angle = Math.PI * 0.5 + (Math.random() - 0.5) * Math.PI * 0.9;
+      const spd = 1.5 + Math.random() * 2.5;
       particles.push({
         x: player.x + player.w / 2,
         y: player.y + player.h,
-        vx: (Math.random() - 0.5) * 4,
-        vy: Math.random() * 2 + 1,
-        size: 4 + Math.random() * 3,
-        color: ["#a78bff", "#67e8f9", "#c084fc"][i % 3],
-        life: 20,
-        maxLife: 20,
-      });
-  }
-  function spawnHitParticles() {
-    for (let i = 0; i < 12; i++) {
-      const a = ((Math.PI * 2) / 12) * i;
-      particles.push({
-        x: player.x + player.w / 2,
-        y: player.y + player.h / 2,
-        vx: Math.cos(a) * (3 + Math.random() * 2),
-        vy: Math.sin(a) * (3 + Math.random() * 2),
-        size: 5 + Math.random() * 3,
-        color: ["#ff6b8a", "#f472b6", "#fbbf24"][i % 3],
-        life: 25,
-        maxLife: 25,
+        vx: Math.cos(angle) * spd,
+        vy: -Math.sin(angle) * spd,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 3 + Math.random() * 3,
+        life: 22 + Math.random() * 14,
+        maxLife: 36,
       });
     }
   }
-  function spawnCoinParticles(x, y) {
-    for (let i = 0; i < 8; i++)
+
+  function spawnHitParticles() {
+    const colors = ["#ff6b8a", "#f43f5e", "#fbbf24", "#ff9eb0"];
+    for (let i = 0; i < 16; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 2 + Math.random() * 4;
       particles.push({
-        x,
-        y,
-        vx: (Math.random() - 0.5) * 5,
-        vy: -Math.random() * 4 - 1,
-        size: 4,
-        color: COLOR_COIN[i % 3],
-        life: 18,
-        maxLife: 18,
+        x: player.x + player.w / 2,
+        y: player.y + player.h / 2,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 4 + Math.random() * 4,
+        life: 30 + Math.random() * 20,
+        maxLife: 50,
       });
+    }
   }
+
+  function spawnCoinParticles(cx, cy) {
+    for (let i = 0; i < 8; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const spd = 1.5 + Math.random() * 2.5;
+      particles.push({
+        x: cx,
+        y: cy,
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd - 1,
+        color: COLOR_COIN[Math.floor(Math.random() * COLOR_COIN.length)],
+        size: 3 + Math.random() * 3,
+        life: 18 + Math.random() * 14,
+        maxLife: 32,
+      });
+    }
+  }
+
+  /* ── Score display ── */
   function updateScoreDisplay() {
-    const sc = document.getElementById("gameScore");
-    const bs = document.getElementById("gameBest");
-    const lv = document.getElementById("gameLives");
-    if (sc) sc.textContent = score;
-    if (bs) bs.textContent = bestScore;
-    if (lv)
-      lv.textContent =
-        "❤️".repeat(Math.max(0, lives)) + "🖤".repeat(Math.max(0, 3 - lives));
+    const scoreEl = document.getElementById("gameScore");
+    const bestEl = document.getElementById("gameBest");
+    const livesEl = document.getElementById("gameLives");
+    if (scoreEl) scoreEl.textContent = score;
+    if (bestEl) bestEl.textContent = bestScore;
+    if (livesEl) livesEl.textContent = "❤️".repeat(Math.max(0, lives)) || "💀";
   }
 
+  /* ── Open / Close game modal ── */
   window.openGame = function () {
-    const modal = document.getElementById("gameModal");
-    if (!modal) return;
-    modal.style.display = "flex";
-    setTimeout(() => modal.classList.add("active"), 10);
-    if (!canvas) setTimeout(initGame, 50);
-    else if (gameState === "idle") drawIdle();
-    document.getElementById("gameBest").textContent = bestScore;
-  };
-  window.closeGame = function () {
-    if (animId) cancelAnimationFrame(animId);
-    gameState = "idle";
-    const modal = document.getElementById("gameModal");
-    if (!modal) return;
-    modal.classList.remove("active");
+    const m = document.getElementById("gameModal");
+    if (!m) return;
+    m.style.display = "flex";
     setTimeout(() => {
-      modal.style.display = "none";
-    }, 400);
-    document.removeEventListener("keydown", handleKey);
+      m.classList.add("active");
+      if (!canvas) initGame();
+    }, 10);
   };
 
-  document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(initGame, 200);
-  });
-})();
+  window.closeGame = function () {
+    const m = document.getElementById("gameModal");
+    if (!m) return;
+    if (animId) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
+    gameState = "idle";
+    m.classList.remove("active");
+    setTimeout(() => (m.style.display = "none"), 400);
+  };
+
+  /* ── Init on DOM ready ── */
+  document.addEventListener("DOMContentLoaded", initGame);
+})(); // end game IIFE

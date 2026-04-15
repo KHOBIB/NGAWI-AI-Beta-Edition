@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <title>NGAWI AI</title>
     <link
@@ -28,7 +28,6 @@
     <div class="bg-grid"></div>
     <div class="bg-scanlines"></div>
 
-    <!-- PIXEL DECOS -->
     <svg
       class="pixel-deco pixel-deco-1"
       width="48"
@@ -71,17 +70,17 @@
 
     <!-- ═══ HEADER ═══ -->
     <header>
-      <!-- Pixel character animation canvas -->
-      <canvas id="headerCharCanvas" class="header-char-canvas"></canvas>
-
-      <div class="logo-pill">
-        <div class="logo-dot">N</div>
-        <div class="logo-text-wrap">
-          <span class="logo-text">NGAWI AI</span>
-        </div>
+      <div class="logo-pill logo-simple">
+        <span class="logo-text">NGAWI AI</span>
       </div>
 
-      <div class="header-music-mini" id="headerMusicMini">
+      <div
+        class="header-music-mini"
+        id="headerMusicMini"
+        onclick="window.openMusicFromMini()"
+        title="Buka Music Player"
+        role="button"
+      >
         <div class="mini-vis-bars">
           <div class="mini-vis-bar"></div>
           <div class="mini-vis-bar"></div>
@@ -136,21 +135,12 @@
     <div id="chatBox">
       <div id="welcome">
         <div class="welcome-orb-wrap">
-          <div class="pixel-corner tl"></div>
-          <div class="pixel-corner tr"></div>
-          <div class="pixel-corner bl"></div>
-          <div class="pixel-corner br"></div>
           <div class="welcome-icon">
-            <canvas
-              id="catWelcomeCanvas"
-              width="90"
-              height="90"
-              style="display: block; border-radius: 22px"
-            ></canvas>
+            <img src="nyan.gif" class="welcome-gif" alt="Rainbow Cat" />
           </div>
         </div>
         <h2 id="welcomeText">Halo User Tercinta</h2>
-        <p class="welcome-sub">NGAWI AI siap tempur. Apapun gw jabanin</p>
+        <p class="welcome-sub">Nanya apa aja gw jabanin</p>
         <div class="pixel-status">ONLINE · READY</div>
         <div class="chips-grid">
           <div class="chip" onclick="useChip(this)">
@@ -214,106 +204,276 @@
 
     <!-- ═══ MUSIC PANEL ═══ -->
     <div id="musicPanel">
-      <div class="music-panel-handle" onclick="window.toggleMusicPanel()"></div>
-      <div class="music-panel-header">
-        <div class="music-panel-title">🎵 MUSIC PLAYER</div>
-        <button
-          class="icon-btn"
-          onclick="window.toggleMusicPanel()"
-          style="width: 32px; height: 32px"
-        >
-          <span class="material-symbols-rounded" style="font-size: 18px"
-            >keyboard_arrow_down</span
-          >
-        </button>
-      </div>
-      <div class="visualizer-wrap">
-        <canvas id="visualizerCanvas"></canvas>
-      </div>
-      <div class="music-info-row">
-        <div class="album-art" id="albumArt">🎵</div>
-        <div class="music-text">
-          <div class="music-title" id="musicTitle">Pilih musik dulu Rek!</div>
-          <div class="music-artist" id="musicArtist">— · —</div>
-        </div>
-        <div class="music-track-count" id="trackCount">0/0</div>
-      </div>
-      <div class="music-progress-wrap">
-        <div
-          class="progress-bar-wrap"
-          id="progressWrap"
-          onclick="window.seekAudio(event)"
-        >
-          <div class="progress-fill" id="progressFill" style="width: 0%"></div>
-        </div>
-        <div class="time-row">
-          <span id="currentTime">0:00</span>
-          <span id="totalTime">0:00</span>
-        </div>
-      </div>
-      <div class="music-controls">
-        <button
-          class="ctrl-btn"
-          id="shuffleBtn"
-          onclick="window.shuffleTrack()"
-          title="Shuffle"
-        >
-          <span class="material-symbols-rounded">shuffle</span>
-        </button>
-        <button class="ctrl-btn" onclick="window.prevTrack()" title="Previous">
-          <span class="material-symbols-rounded">skip_previous</span>
-        </button>
-        <button
-          class="ctrl-btn play-pause"
-          id="playPauseBtn"
-          onclick="window.togglePlay()"
-          title="Play/Pause"
-        >
-          <span class="material-symbols-rounded">play_arrow</span>
-        </button>
-        <button class="ctrl-btn" onclick="window.nextTrack()" title="Next">
-          <span class="material-symbols-rounded">skip_next</span>
-        </button>
-        <button
-          class="ctrl-btn"
-          id="repeatBtn"
-          onclick="window.toggleRepeat()"
-          title="Repeat"
-        >
-          <span class="material-symbols-rounded">repeat</span>
-        </button>
-      </div>
-      <div class="volume-row">
-        <span class="material-symbols-rounded" id="volIcon">volume_up</span>
-        <input
-          type="range"
-          class="vol-slider"
-          id="volSlider"
-          min="0"
-          max="1"
-          step="0.01"
-          value="0.8"
-          oninput="window.setVolume(this.value)"
-        />
-      </div>
-      <div class="playlist-section">
-        <div class="playlist-header">
-          <div class="playlist-title">Playlist</div>
+      <div class="music-panel-bg"></div>
+
+      <!-- ── LEFT / MAIN COLUMN ── -->
+      <div class="mp-player-col">
+        <div class="yt-top-bar">
           <button
-            class="add-music-btn"
-            onclick="document.getElementById('musicFileInput').click()"
+            class="icon-btn"
+            onclick="window.toggleMusicPanel()"
+            style="width: 32px; height: 32px; flex-shrink: 0"
           >
-            <span class="material-symbols-rounded">add</span>Tambah Musik
+            <span class="material-symbols-rounded" style="font-size: 18px"
+              >keyboard_arrow_down</span
+            >
+          </button>
+          <div class="music-panel-title">NOW PLAYING</div>
+          <div class="yt-top-bar-actions">
+            <button
+              class="add-btn-topbar"
+              onclick="document.getElementById('musicFileInput').click()"
+              title="Tambah Musik"
+            >
+              <span class="material-symbols-rounded">add</span>
+            </button>
+            <div class="music-track-count" id="trackCount">0/0</div>
+          </div>
+        </div>
+
+        <div class="yt-album-section">
+          <div class="album-art" id="albumArt">🎵</div>
+        </div>
+
+        <div class="yt-song-info">
+          <div class="song-info-text">
+            <div class="music-title" id="musicTitle">Pilih musik dulu Rek!</div>
+            <div class="music-artist" id="musicArtist">— · —</div>
+          </div>
+          <button
+            class="like-btn"
+            id="likeBtn"
+            onclick="window.toggleLike()"
+            title="Suka"
+          >
+            <span class="material-symbols-rounded">favorite_border</span>
           </button>
         </div>
-        <div id="playlistContainer">
-          <div class="playlist-empty">
-            <span class="playlist-empty-icon">🎧</span>
-            Belum ada musik nih Rek!<br />Tambahin dari storage lu dulu
+
+        <div class="music-progress-wrap">
+          <input
+            type="range"
+            id="seekSlider"
+            class="seek-slider"
+            min="0"
+            max="1000"
+            step="1"
+            value="0"
+            aria-label="Seek"
+          />
+          <div class="time-row">
+            <span id="currentTime">0:00</span>
+            <span id="totalTime">0:00</span>
+          </div>
+        </div>
+
+        <div class="music-controls">
+          <button
+            class="ctrl-btn"
+            id="shuffleBtn"
+            onclick="window.shuffleTrack()"
+            title="Shuffle"
+          >
+            <span class="material-symbols-rounded">shuffle</span>
+          </button>
+          <button
+            class="ctrl-btn"
+            onclick="window.prevTrack()"
+            title="Previous"
+          >
+            <span class="material-symbols-rounded">skip_previous</span>
+          </button>
+          <button
+            class="ctrl-btn play-pause"
+            id="playPauseBtn"
+            onclick="window.togglePlay()"
+            title="Play/Pause"
+          >
+            <span class="material-symbols-rounded">play_arrow</span>
+          </button>
+          <button class="ctrl-btn" onclick="window.nextTrack()" title="Next">
+            <span class="material-symbols-rounded">skip_next</span>
+          </button>
+          <button
+            class="ctrl-btn"
+            id="repeatBtn"
+            onclick="window.toggleRepeat()"
+            title="Repeat"
+          >
+            <span class="material-symbols-rounded">repeat</span>
+          </button>
+        </div>
+
+        <div class="volume-row">
+          <span class="material-symbols-rounded" id="volIcon">volume_down</span>
+          <input
+            type="range"
+            class="vol-slider"
+            id="volSlider"
+            min="0"
+            max="1"
+            step="0.01"
+            value="0.8"
+            oninput="window.setVolume(this.value)"
+          />
+          <span class="material-symbols-rounded">volume_up</span>
+        </div>
+
+        <!-- Mobile-only tab bar -->
+        <div class="yt-tabs-bar mobile-tabs-bar">
+          <button
+            class="yt-tab-btn"
+            id="tabQueueBtn"
+            onclick="
+              event.stopPropagation();
+              window.switchMusicTab('queue');
+            "
+          >
+            Berikutnya
+          </button>
+          <button
+            class="yt-tab-btn"
+            id="tabLyricsBtn"
+            onclick="
+              event.stopPropagation();
+              window.switchMusicTab('lyrics');
+            "
+          >
+            Lirik
+          </button>
+          <button
+            class="yt-tab-btn"
+            id="tabFavsBtn"
+            onclick="
+              event.stopPropagation();
+              window.switchMusicTab('favs');
+            "
+          >
+            Favorit
+          </button>
+        </div>
+      </div>
+
+      <!-- ── RIGHT / SIDE COLUMN ── -->
+      <div class="mp-side-col" id="mpSideCol" data-active-tab="queue">
+        <div
+          class="mp-mobile-nowbar"
+          id="mpMobileNowbar"
+          onclick="window.handleMobileNowbarTap(event)"
+        >
+          <div class="mp-mobile-nowbar-main">
+            <div class="mp-mobile-nowbar-thumb" id="mpMobileNowbarThumb">♪</div>
+            <div class="mp-mobile-nowbar-meta">
+              <div class="mp-mobile-nowbar-title" id="mpMobileNowbarTitle">
+                Pilih musik dulu Rek!
+              </div>
+              <div class="mp-mobile-nowbar-artist" id="mpMobileNowbarArtist">
+                — · —
+              </div>
+            </div>
+          </div>
+          <div class="mp-mobile-nowbar-actions">
+            <button
+              class="mp-mobile-icon-btn"
+              id="mpMobilePauseBtn"
+              title="Play/Pause"
+              onclick="
+                event.stopPropagation();
+                window.togglePlay();
+              "
+            >
+              <span class="material-symbols-rounded">play_arrow</span>
+            </button>
+          </div>
+        </div>
+        <!-- Desktop-only tab bar -->
+        <div class="yt-tabs-bar desktop-side-tabs" id="desktopSideTabs">
+          <button
+            class="yt-tab-btn active"
+            id="tabQueueBtnD"
+            onclick="
+              event.stopPropagation();
+              window.switchMusicTab('queue');
+            "
+          >
+            Berikutnya
+          </button>
+          <button
+            class="yt-tab-btn"
+            id="tabLyricsBtnD"
+            onclick="
+              event.stopPropagation();
+              window.switchMusicTab('lyrics');
+            "
+          >
+            Lirik
+          </button>
+          <button
+            class="yt-tab-btn"
+            id="tabFavsBtnD"
+            onclick="
+              event.stopPropagation();
+              window.switchMusicTab('favs');
+            "
+          >
+            Favorit
+          </button>
+        </div>
+
+        <!-- Queue Tab -->
+        <div id="tabQueueContent" class="yt-tab-content active-tab">
+          <div class="visualizer-wrap">
+            <canvas id="visualizerCanvas"></canvas>
+          </div>
+          <div class="playlist-section">
+            <div class="playlist-header">
+              <div class="playlist-title">Playlist</div>
+              <!-- Tombol tambah duplikat DIHAPUS — hanya pakai yang di topbar -->
+            </div>
+            <div id="playlistContainer">
+              <div class="playlist-empty">
+                <span class="playlist-empty-icon">🎧</span>
+                Belum ada musik nih Rek!<br />Tambahin dari storage lu dulu
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lyrics Tab -->
+        <div id="tabLyricsContent" class="yt-tab-content">
+          <div class="lyrics-container" id="lyricsContainer">
+            <div class="lyrics-empty">
+              <span class="lyrics-empty-icon">🎵</span>
+              <p>
+                Play musik dulu buat liat lirik<br />
+                <small style="font-size: 11px; opacity: 0.6"
+                  >Format nama file: "Artist - Judul Lagu"</small
+                >
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Favorites Tab -->
+        <div id="tabFavsContent" class="yt-tab-content">
+          <div class="playlist-section">
+            <div class="playlist-header">
+              <div class="playlist-title">Favorit</div>
+            </div>
+            <div id="favsContainer">
+              <div class="playlist-empty">
+                <span class="playlist-empty-icon">💜</span>
+                Belum ada lagu favorit nih Rek!<br />Pencet tombol ❤️ di lagu yang
+                disuka dulu
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- ═══ MOBILE TAB BACKDROP — tap area kosong untuk close ═══ -->
+    <div id="mpSideBackdrop"></div>
 
     <input
       type="file"
@@ -377,14 +537,11 @@
     <!-- ═══ SIDEBAR ═══ -->
     <div id="sideOverlay" onclick="window.closeSidebar()"></div>
     <div id="profileSidebar">
-      <!-- Guest Header (not logged in) -->
       <div id="sideHeaderGuest" class="side-header-guest">
         <span class="side-cat-avatar">😹</span>
         <div id="sideGuestName">Halo User Tercinta</div>
         <div id="sideGuestSub">Login dulu buat fitur lengkap</div>
       </div>
-
-      <!-- User Header (logged in) -->
       <div id="sideHeaderUser" class="side-header" style="display: none">
         <img
           id="sideAvatar"
@@ -400,9 +557,7 @@
           VERIFIED
         </div>
       </div>
-
       <div class="side-menu">
-        <!-- Login Button (guest only) -->
         <div id="sideMenuGuest">
           <div
             class="sidebar-item sidebar-login-btn"
@@ -416,8 +571,6 @@
           </div>
           <div class="sidebar-divider"></div>
         </div>
-
-        <!-- User-only menu items -->
         <div id="sideMenuUser" style="display: none">
           <div class="sidebar-item" onclick="window.openEditProfile()">
             <span class="material-symbols-rounded">manage_accounts</span
@@ -429,8 +582,6 @@
           </div>
           <div class="sidebar-divider"></div>
         </div>
-
-        <!-- Shared menu items (all users, mobile-visible) -->
         <div
           class="sidebar-item mobile-sidebar-item"
           onclick="
@@ -472,8 +623,6 @@
           <span class="material-symbols-rounded">music_note</span
           ><span>Music Player</span>
         </div>
-
-        <!-- Logout (user only) -->
         <div
           id="sideLogoutBtn"
           class="sidebar-item danger"
@@ -484,7 +633,6 @@
           ><span>Keluar</span>
         </div>
       </div>
-
       <div class="side-footer">NGAWI AI · BY KHOBIB</div>
     </div>
 
@@ -528,7 +676,6 @@
         </div>
         <div class="modal-title" id="authTitle">Selamat Datang</div>
         <p class="modal-sub" id="authSub">Masuk ke NGAWI AI buat lanjut rek</p>
-
         <div id="regFields" class="field" style="display: none">
           <label>Nama Lengkap</label>
           <div class="field-inner">
@@ -571,6 +718,7 @@
               class="material-symbols-rounded eye-btn"
               id="eyeIcon"
               onclick="window.togglePW()"
+              role="button"
               >visibility_off</span
             >
           </div>
@@ -589,7 +737,6 @@
             >Lupa password?</span
           >
         </div>
-
         <button
           id="mainAuthBtn"
           class="btn-primary"
@@ -609,7 +756,6 @@
           />
           <span>Lanjut Pake Google</span>
         </button>
-
         <div class="divider">atau</div>
         <p style="font-size: 13px; color: var(--text2); margin-top: 6px">
           <span id="switchText">Belum punya akun?</span>
@@ -721,9 +867,51 @@
       </div>
     </div>
 
-    <!-- ═══ SCRIPTS ═══ -->
-    <script src="game.js"></script>
-    <script src="music.js"></script>
+    <!-- ═══ CROP MODAL ═══ -->
+    <div id="cropModal" class="modal" style="z-index: 3000">
+      <div class="modal-box crop-modal-box">
+        <span class="modal-icon">✂️</span>
+        <div class="modal-title">Atur Foto Profil</div>
+        <p class="modal-sub">Drag untuk geser · Zoom untuk perbesar</p>
+        <div class="crop-wrap">
+          <canvas id="cropCanvas"></canvas>
+        </div>
+        <div class="crop-zoom-row">
+          <span
+            class="material-symbols-rounded"
+            style="font-size: 18px; color: var(--text2)"
+            >zoom_out</span
+          >
+          <input
+            type="range"
+            id="cropZoom"
+            min="0.1"
+            max="3"
+            step="0.01"
+            value="1"
+            class="vol-slider"
+          />
+          <span
+            class="material-symbols-rounded"
+            style="font-size: 18px; color: var(--text2)"
+            >zoom_in</span
+          >
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 16px">
+          <button class="btn-ghost" onclick="window.closeCropModal()">
+            Batal
+          </button>
+          <button
+            class="btn-primary"
+            onclick="window.applyCrop()"
+            style="margin-top: 0; flex: 1"
+          >
+            <span class="btn-text">✅ Terapkan</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="script.js"></script>
   </body>
 </html>
