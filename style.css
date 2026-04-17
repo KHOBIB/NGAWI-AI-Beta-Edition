@@ -128,7 +128,8 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   background: rgba(124, 58, 237, 0.18);
   top: -100px;
   left: -100px;
-  animation: orbFloat 12s ease-in-out infinite;
+  animation: orbFloat 20s ease-in-out infinite;
+  will-change: transform;
 }
 .bg-orb-2 {
   width: min(400px, 70vw);
@@ -136,7 +137,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   background: rgba(103, 232, 249, 0.12);
   top: 50%;
   right: -150px;
-  animation: orbFloat 12s ease-in-out infinite -4s;
+  animation: orbFloat 20s ease-in-out infinite -4s;
 }
 .bg-orb-3 {
   width: min(350px, 60vw);
@@ -144,7 +145,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   background: rgba(244, 114, 182, 0.1);
   bottom: -80px;
   left: 30%;
-  animation: orbFloat 12s ease-in-out infinite -8s;
+  animation: orbFloat 25s ease-in-out infinite -8s;
 }
 .bg-orb-4 {
   width: min(300px, 55vw);
@@ -152,7 +153,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
   background: rgba(99, 102, 241, 0.1);
   top: 30%;
   left: 60%;
-  animation: orbFloat 15s ease-in-out infinite -6s;
+  animation: orbFloat 25s ease-in-out infinite -6s;
 }
 @keyframes orbFloat {
   0%,
@@ -269,7 +270,6 @@ header::before {
   box-shadow:
     0 0 12px var(--glow),
     0 0 24px var(--glow2);
-  animation: navGlowShift 4s linear infinite;
   z-index: 2;
 }
 @keyframes navGlowShift {
@@ -319,7 +319,6 @@ header::before {
   box-shadow:
     0 0 14px rgba(124, 92, 252, 0.6),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  animation: pixelGlow 2s ease-in-out infinite;
   position: relative;
   flex-shrink: 0;
 }
@@ -415,15 +414,18 @@ header::before {
   height: 7px;
 }
 
-/* Beat animation (only when playing) */
+/* Beat animation disabled for mobile performance - use static styling instead */
 .header-music-mini.playing .mini-vis-bar {
-  animation: miniBeat 0.75s ease-in-out infinite;
+  opacity: 1;
+  transform: scaleY(1);
 }
 .header-music-mini.playing .mini-vis-bar:nth-child(2) {
-  animation-duration: 0.62s;
+  opacity: 0.9;
+  transform: scaleY(0.85);
 }
 .header-music-mini.playing .mini-vis-bar:nth-child(3) {
-  animation-duration: 0.84s;
+  opacity: 0.8;
+  transform: scaleY(0.7);
 }
 @keyframes miniBeat {
   0% {
@@ -573,7 +575,6 @@ header::before {
   box-shadow:
     0 0 0 3px var(--accent-dim),
     0 0 30px var(--glow);
-  animation: iconPulse 3s ease-in-out infinite;
   position: relative;
   overflow: hidden;
 }
@@ -1224,8 +1225,8 @@ header::before {
   bottom: 0;
   z-index: 200;
   background: var(--bg2);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   border-top: 1px solid var(--glass-border);
   box-shadow:
     0 -20px 60px rgba(0, 0, 0, 0.5),
@@ -1577,8 +1578,8 @@ header::before {
 
   /* Extreme Transparant Frosted Glass Effect */
   background: rgba(255, 255, 255, 0.01); /* Super transparan */
-  backdrop-filter: blur(40px) saturate(200%) contrast(100%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%) contrast(100%);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
   padding: 4px 10px;
@@ -1781,7 +1782,6 @@ header::before {
     transform 0.3s ease,
     box-shadow 0.3s ease;
   transform: scale(var(--beat-scale));
-  will-change: transform, box-shadow;
   max-width: 100%;
   max-height: min(65vh, 560px);
   box-sizing: border-box;
@@ -2210,7 +2210,6 @@ input[type="range"].vol-slider::-moz-range-thumb {
     transform 0.5s cubic-bezier(0.19, 1, 0.22, 1),
     opacity 0.4s ease,
     filter 0.4s ease;
-  will-change: transform, opacity;
   opacity: 0;
   pointer-events: none;
 }
@@ -2516,8 +2515,8 @@ input[type="range"].vol-slider::-moz-range-thumb {
   height: 100%;
   z-index: 1000;
   background: var(--glass);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   border-left: 1px solid var(--glass-border);
   border-radius: 28px 0 0 28px;
   box-shadow:
@@ -2549,7 +2548,6 @@ input[type="range"].vol-slider::-moz-range-thumb {
 .side-cat-avatar {
   font-size: 60px;
   line-height: 1;
-  animation: catBob 2s ease-in-out infinite;
   margin-bottom: 14px;
   display: block;
 }
@@ -2726,7 +2724,7 @@ input[type="range"].vol-slider::-moz-range-thumb {
   font-weight: 600;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   background: var(--glass);
-  backdrop-filter: blur(24px) saturate(200%);
+  backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid var(--glass-border);
   white-space: nowrap;
   max-width: calc(100vw - 32px);
@@ -2807,8 +2805,8 @@ input[type="range"].vol-slider::-moz-range-thumb {
 }
 .modal-box {
   background: var(--glass);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid var(--glass-border);
   border-radius: 28px;
   padding: 24px 20px;
@@ -2862,7 +2860,6 @@ input[type="range"].vol-slider::-moz-range-thumb {
   font-size: 28px;
   margin-bottom: 14px;
   display: block;
-  animation: iconBob 2s ease-in-out infinite;
 }
 @keyframes iconBob {
   0%,
@@ -3058,8 +3055,8 @@ input[type="range"].vol-slider::-moz-range-thumb {
   overflow: hidden;
   border: 1px solid var(--glass-border);
   background: var(--glass);
-  backdrop-filter: blur(40px) saturate(200%);
-  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
   border-radius: 32px;
   box-shadow:
     0 30px 60px rgba(0, 0, 0, 0.4),
@@ -3110,7 +3107,6 @@ input[type="range"].vol-slider::-moz-range-thumb {
   font-size: 28px;
   margin-bottom: 4px;
   filter: drop-shadow(0 0 12px var(--glow));
-  animation: iconFloat 3s ease-in-out infinite;
 }
 
 @keyframes iconFloat {
@@ -4627,9 +4623,9 @@ input[type="range"].vol-slider::-moz-range-thumb {
 ═══════════════════════════════════════════ */
 @media (max-width: 768px) {
   .bg-orb {
-    filter: blur(40px) !important;
-    animation: orbFloat 20s ease-in-out infinite;
-    opacity: 0.6;
+    filter: blur(20px) !important;
+    animation: none;
+    opacity: 0.4;
   }
   .bg-scanlines {
     display: none;
@@ -4638,25 +4634,25 @@ input[type="range"].vol-slider::-moz-range-thumb {
     background-size: 48px 48px;
   }
   header {
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
   .ai .bubble {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
   }
   .input-wrap {
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
   }
   #musicPanel {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     cursor: default;
   }
   #profileSidebar {
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
   .chip::before {
     display: none;
@@ -4674,7 +4670,18 @@ input[type="range"].vol-slider::-moz-range-thumb {
     box-shadow: 0 0 10px rgba(124, 92, 252, 0.5);
   }
   .welcome-icon {
-    animation: iconPulse 5s ease-in-out infinite;
+    animation: none;
+    box-shadow:
+      0 0 0 3px var(--accent-dim),
+      0 0 30px var(--glow);
+  }
+  /* Disable heavy animations on mobile */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.15s !important;
   }
 }
 @media (max-width: 768px) and (max-height: 700px) {
