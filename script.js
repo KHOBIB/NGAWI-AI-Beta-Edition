@@ -139,6 +139,27 @@ window.autoResizeTA = (el) => {
   el.style.height = Math.min(el.scrollHeight, 140) + "px";
 };
 
+window.escHtml = (str) =>
+  String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+const escHtml = (str) => window.escHtml(str);
+
+function addBubble(role, htmlContent) {
+  const box = document.getElementById("chatBox");
+  if (!box) return;
+
+  const row = document.createElement("div");
+  row.className = `msg ${role === "user" ? "user" : "ai"}`;
+  row.innerHTML =
+    role === "user"
+      ? `<div class="bubble">${htmlContent}</div>`
+      : `<div class="ai-avatar">N</div><div class="bubble">${htmlContent}</div>`;
+  box.appendChild(row);
+  box.scrollTop = box.scrollHeight;
+}
+
 function formatAssistantText(text) {
   return escHtml(text)
     .replace(/\*\*(.*?)\*\*/gs, "<strong>$1</strong>")
@@ -320,7 +341,7 @@ window.askAI = async () => {
     return;
   }
 
-  if (!prompt && (!window.selectedImages || window.selectedImages.length === 0)) {
+  if (!prompt && selectedImages.length === 0) {
     window.showAlert?.("Isi dulu pertanyaannya atau pilih gambar Rek");
     return;
   }
