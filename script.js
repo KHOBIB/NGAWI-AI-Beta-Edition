@@ -378,32 +378,40 @@ window.askAI = async () => {
     const messagesToSend =
       history.length > 32 ? [history[0], ...history.slice(-30)] : history;
 
+    // Hard timeout so UI doesn't look stuck
+    const ac = new AbortController();
+    const t = setTimeout(() => ac.abort("timeout"), 30000);
+
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      signal: ac.signal,
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",
         messages: messagesToSend,
-        // NOTE: /api/chat currently just forwards OpenRouter response.
-        // Some models/providers may not reliably stream via edge runtime.
-        // Use non-stream response for maximum compatibility.
         stream: false,
         max_tokens: 4096,
         temperature: 0.85,
       }),
     });
+    clearTimeout(t);
 
-    // If API returns error JSON, show it clearly
+    const raw = await res.text().catch(() => "");
+
     if (!res.ok) {
-      let details = "";
+      // Try parse OpenRouter/Vercel error JSON
+      let msg = raw;
       try {
-        details = await res.text();
+        const j = JSON.parse(raw);
+        msg =
+          j?.error?.message ||
+          j?.message ||
+          (typeof j?.error === "string" ? j.error : "") ||
+          raw;
       } catch (_) {}
-      throw new Error(`HTTP ${res.status}${details ? ` — ${details}` : ""}`);
+      throw new Error(msg || `HTTP ${res.status}`);
     }
 
-    // Non-stream JSON response (OpenRouter)
-    const raw = await res.text();
     let full = "";
     try {
       const j = JSON.parse(raw);
@@ -412,17 +420,10 @@ window.askAI = async () => {
         j?.choices?.[0]?.text ||
         j?.message?.content ||
         "";
-
-      // Surface server/provider errors if present
       if (!full && j?.error) {
-        const msg =
-          typeof j.error === "string"
-            ? j.error
-            : j.error?.message || JSON.stringify(j.error);
-        full = `Error: ${msg}`;
+        full = `Error: ${j.error?.message || JSON.stringify(j.error)}`;
       }
     } catch (_) {
-      // If backend responded with plain text, show it
       full = raw;
     }
 
@@ -431,7 +432,8 @@ window.askAI = async () => {
     if (tm)
       tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
     const bubble = document.getElementById(lId);
-    if (bubble) bubble.innerHTML = formatAssistantMessage(full || "(No response)");
+    if (bubble)
+      bubble.innerHTML = formatAssistantMessage(full || "(No response)");
 
     history.push({ role: "assistant", content: full || "" });
     return;
@@ -513,7 +515,8 @@ window.askAI = async () => {
         try {
           const j = JSON.parse(fallbackText);
           const content = j?.choices?.[0]?.message?.content;
-          if (typeof content === "string" && content.trim()) fullStreaming = content;
+          if (typeof content === "string" && content.trim())
+            fullStreaming = content;
         } catch (_) {
           // Not JSON, use raw text if meaningful
           if (fallbackText && fallbackText.trim().length > 10)
@@ -539,11 +542,11 @@ window.askAI = async () => {
     history.push({ role: "assistant", content: fullStreaming });
   } catch (e) {
     console.error("Chat error:", e);
-    // Find the latest typing-indicator and show error
     const typingIndicators = document.querySelectorAll(".msg.ai");
     const tm = typingIndicators[typingIndicators.length - 1];
+    const detail = (e?.message || String(e) || "").slice(0, 500);
     if (tm)
-      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble">Koneksi error Rek! Coba lagi ya, mungkin koneksi lu lagi lemot atau server lagi sibuk. 😹</div>`;
+      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble"><strong>Chat error</strong><br>${escHtml(detail)}</div>`;
   } finally {
     sendBtn.disabled = false;
   }
