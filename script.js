@@ -139,6 +139,43 @@ window.autoResizeTA = (el) => {
   el.style.height = Math.min(el.scrollHeight, 140) + "px";
 };
 
+function formatAssistantText(text) {
+  return escHtml(text)
+    .replace(/\*\*(.*?)\*\*/gs, "<strong>$1</strong>")
+    .replace(/`([^`\n]+)`/g, '<code class="inline-code">$1</code>')
+    .replace(/\n/g, "<br>");
+}
+
+function formatAssistantMessage(rawText, { streaming = false } = {}) {
+  const source = String(rawText || "");
+  const codeFenceRegex = /```([\w.+-]*)\n?([\s\S]*?)```/g;
+  let html = "";
+  let lastIndex = 0;
+  let match;
+
+  while ((match = codeFenceRegex.exec(source)) !== null) {
+    const [fullMatch, langRaw, codeRaw] = match;
+    const before = source.slice(lastIndex, match.index);
+    if (before) html += formatAssistantText(before);
+
+    const lang = escHtml((langRaw || "").trim() || "code");
+    const codeLines = codeRaw.replace(/\n$/, "").split("\n");
+    const codeHtml = codeLines
+      .map((line, idx) => {
+        const safeLine = line ? escHtml(line) : "&nbsp;";
+        return `<span class="code-line"><span class="code-line-no">${idx + 1}</span><span class="code-line-text">${safeLine}</span></span>`;
+      })
+      .join("");
+    html += `<div class="code-block"><div class="code-toolbar"><div class="code-toolbar-dots"><span></span><span></span><span></span></div><div class="code-block-label">${lang}</div><div class="code-toolbar-spacer"></div></div><pre><code>${codeHtml}</code></pre></div>`;
+    lastIndex = match.index + fullMatch.length;
+  }
+
+  const tail = source.slice(lastIndex);
+  if (tail) html += formatAssistantText(tail);
+  if (streaming) html += '<span class="typing-cursor"></span>';
+  return html;
+}
+
 function setBtnLoading(id, on) {
   document.getElementById(id)?.classList[on ? "add" : "remove"]("loading");
 }
@@ -379,11 +416,7 @@ window.askAI = async () => {
           }
           const bubble = document.getElementById(lId);
           if (bubble) {
-            // Basic markdown support for bolding and line breaks
-            bubble.innerHTML =
-              full
-                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-                .replace(/\n/g, "<br>") + '<span class="typing-cursor"></span>';
+            bubble.innerHTML = formatAssistantMessage(full, { streaming: true });
             box.scrollTop = box.scrollHeight;
           }
         }
@@ -423,7 +456,7 @@ window.askAI = async () => {
         if (!started)
           tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
         const bubble = document.getElementById(lId);
-        if (bubble) bubble.innerHTML = full;
+        if (bubble) bubble.innerHTML = formatAssistantMessage(full);
       }
     }
 
@@ -447,7 +480,7 @@ function addBubble(role, text, id = "") {
   d.className = `msg ${role}`;
   d.innerHTML =
     role === "ai"
-      ? `<div class="ai-avatar">N</div><div class="bubble"${id ? ` id="${id}"` : ""}>${text}</div>`
+      ? `<div class="ai-avatar">N</div><div class="bubble"${id ? ` id="${id}"` : ""}>${formatAssistantMessage(text)}</div>`
       : `<div class="bubble"${id ? ` id="${id}"` : ""}>${text}</div>`;
   box.appendChild(d);
   box.scrollTop = box.scrollHeight;
@@ -1123,10 +1156,13 @@ window.applyCrop = function () {
     sourceConnected = false;
   let currentMobileTab = null;
   let lastTabTouchAt = 0;
+  const isMobileViewport = () => window.matchMedia("(max-width: 768px)").matches;
 
   const audio = new Audio();
   audio.volume = parseFloat(localStorage.getItem("ngawi-vol") || "0.8");
   let isProgressDragging = false;
+  let lastRenderedCurrentSecond = -1;
+  let lastRenderedDurationLabel = "";
   let dragSeekRatio = 0;
 
   /* ── Synced lyrics state ── */
@@ -1372,27 +1408,71 @@ window.applyCrop = function () {
   /* ── Visualizer ── */
   const canvas = document.getElementById("visualizerCanvas");
   const ctx = canvas ? canvas.getContext("2d") : null;
+  let visualizerFrameId = 0;
+  let visualizerFreqData = null;
+  let visualizerLastFrameAt = 0;
 
   function resizeCanvas() {
     if (!canvas) return;
-    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-    if (ctx) ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobileViewport() ? 1.5 : 2);
+    canvas.width = Math.floor(canvas.offsetWidth * dpr);
+    canvas.height = Math.floor(canvas.offsetHeight * dpr);
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
-  window.addEventListener("resize", resizeCanvas);
+  let resizeCanvasTimer = 0;
+  function scheduleCanvasResize() {
+    window.clearTimeout(resizeCanvasTimer);
+    resizeCanvasTimer = window.setTimeout(resizeCanvas, 120);
+  }
+  function isVisualizerActive() {
+    const panel = document.getElementById("musicPanel");
+    return !!canvas && !!panel?.classList.contains("open") && !document.hidden;
+  }
+  function stopVisualizer() {
+    if (!visualizerFrameId) return;
+    cancelAnimationFrame(visualizerFrameId);
+    visualizerFrameId = 0;
+  }
+  function requestVisualizerFrame() {
+    if (visualizerFrameId || !isVisualizerActive()) return;
+    visualizerFrameId = requestAnimationFrame(drawVisualizer);
+  }
+  function syncVisualizerState() {
+    if (isVisualizerActive()) requestVisualizerFrame();
+    else stopVisualizer();
+  }
+  window.addEventListener("resize", scheduleCanvasResize);
   setTimeout(resizeCanvas, 120);
 
-  function drawVisualizer() {
-    requestAnimationFrame(drawVisualizer);
+  function drawVisualizer(now = 0) {
+    visualizerFrameId = 0;
     if (!canvas || !ctx) return;
+    if (!isVisualizerActive()) return;
+    const frameInterval = isMobileViewport()
+      ? audio.paused
+        ? 1000 / 12
+        : 1000 / 24
+      : audio.paused
+        ? 1000 / 18
+        : 1000 / 36;
+    if (now && now - visualizerLastFrameAt < frameInterval) {
+      requestVisualizerFrame();
+      return;
+    }
+    visualizerLastFrameAt = now;
     const W = canvas.offsetWidth,
       H = canvas.offsetHeight;
     ctx.clearRect(0, 0, W, H);
     const isDark = document.body.getAttribute("data-theme") !== "light";
-    const barCount = 32;
+    const barCount = isMobileViewport() ? 20 : 32;
     let beatLevel = 0;
     if (analyser && !audio.paused) {
-      const data = new Uint8Array(analyser.frequencyBinCount);
+      const data =
+        visualizerFreqData &&
+        visualizerFreqData.length === analyser.frequencyBinCount
+          ? visualizerFreqData
+          : new Uint8Array(analyser.frequencyBinCount);
+      visualizerFreqData = data;
       analyser.getByteFrequencyData(data);
       beatLevel = data.reduce((s, v) => s + v, 0) / (data.length * 255);
       const barW = (W - (barCount - 1) * 3) / barCount;
@@ -1427,8 +1507,9 @@ window.applyCrop = function () {
       }
     }
     updateBeatPulse(beatLevel);
+    requestVisualizerFrame();
   }
-  drawVisualizer();
+  document.addEventListener("visibilitychange", syncVisualizerState);
 
   function updateBeatPulse(level) {
     const album = document.getElementById("albumArt");
@@ -1539,6 +1620,7 @@ window.applyCrop = function () {
           initAudioCtx();
           if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
           updatePlayerUI(true);
+          syncVisualizerState();
         })
         .catch(() => {
           window.showAlert("Tekan lagi tombol play ya Rek 🙌");
@@ -1546,6 +1628,7 @@ window.applyCrop = function () {
     } else {
       audio.pause();
       updatePlayerUI(false);
+      syncVisualizerState();
       document.getElementById("headerMusicMini")?.classList.remove("visible");
     }
   };
@@ -1601,11 +1684,11 @@ window.applyCrop = function () {
     const isLight = document.body.getAttribute("data-theme") === "light";
     
     if (isLight) {
-      // Warna ungu aksen untuk mode terang agar kontras
-      slider.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, rgba(109, 40, 217, 0.15) ${pct}%, rgba(109, 40, 217, 0.15) 100%)`;
+      // Warna aksen untuk mode terang agar kontras
+      slider.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--accent-dim) ${pct}%, var(--accent-dim) 100%)`;
     } else {
       // Putih filled track untuk mode gelap
-      slider.style.background = `linear-gradient(to right, #ffffff 0%, #ffffff ${pct}%, rgba(255,255,255,0.16) ${pct}%, rgba(255,255,255,0.16) 100%)`;
+      slider.style.background = `linear-gradient(to right, var(--text) 0%, var(--text) ${pct}%, rgba(255,255,255,0.1) ${pct}%, rgba(255,255,255,0.1) 100%)`;
     }
   }
   function renderProgressPreviewByRatio(ratio) {
@@ -1845,13 +1928,19 @@ window.applyCrop = function () {
     const ratio = audio.currentTime / audio.duration;
     const ct = document.getElementById("currentTime");
     const tt = document.getElementById("totalTime");
+    const currentSecond = Math.floor(audio.currentTime);
+    const durationLabel = formatTime(audio.duration);
     if (!isProgressDragging) {
       const slider = document.getElementById("seekSlider");
       if (slider) slider.value = String(Math.round(ratio * 1000));
       _setSeekSliderVisual(ratio);
-      if (ct) ct.textContent = formatTime(audio.currentTime);
+      if (ct && currentSecond !== lastRenderedCurrentSecond) {
+        ct.textContent = formatTime(audio.currentTime);
+      }
     }
-    if (tt) tt.textContent = formatTime(audio.duration);
+    if (tt && durationLabel !== lastRenderedDurationLabel) tt.textContent = durationLabel;
+    lastRenderedCurrentSecond = currentSecond;
+    lastRenderedDurationLabel = durationLabel;
     if (syncedLines.length > 0) {
       const currentTime = audio.currentTime;
       let activeIdx = -1;
@@ -1872,6 +1961,8 @@ window.applyCrop = function () {
     const tt = document.getElementById("totalTime");
     const ct = document.getElementById("currentTime");
     const slider = document.getElementById("seekSlider");
+    lastRenderedCurrentSecond = -1;
+    lastRenderedDurationLabel = "";
     if (slider) slider.value = "0";
     _setSeekSliderVisual(0);
     if (ct) ct.textContent = "0:00";
@@ -1906,7 +1997,12 @@ window.applyCrop = function () {
         // skip scroll biar gak bikin layout aneh di tab lain.
         const pe = window.getComputedStyle(container).pointerEvents;
         if (pe === "none") return;
-        activeLine.scrollIntoView({ behavior: "smooth", block: "center" });
+        const targetTop =
+          activeLine.offsetTop - container.clientHeight / 2 + activeLine.clientHeight / 2;
+        container.scrollTo({
+          top: Math.max(0, targetTop),
+          behavior: isDesktop ? "smooth" : "auto",
+        });
       }
     }
   }
@@ -1988,8 +2084,14 @@ window.applyCrop = function () {
       }
     }
   });
-  audio.addEventListener("play", () => updatePlayerUI(true));
-  audio.addEventListener("pause", () => updatePlayerUI(false));
+  audio.addEventListener("play", () => {
+    updatePlayerUI(true);
+    syncVisualizerState();
+  });
+  audio.addEventListener("pause", () => {
+    updatePlayerUI(false);
+    syncVisualizerState();
+  });
 
   const volSlider = document.getElementById("volSlider");
   if (volSlider) volSlider.value = audio.volume;
@@ -2003,8 +2105,9 @@ window.applyCrop = function () {
     panel.classList.toggle("open");
     btn?.classList.toggle("music-active", !isOpen);
     if (!isOpen) {
-      setTimeout(resizeCanvas, 120);
+      scheduleCanvasResize();
     }
+    syncVisualizerState();
     // Close mobile tab when closing panel
     if (isOpen) {
       window.closeMobileTab();
@@ -2199,20 +2302,25 @@ window.applyCrop = function () {
   initMusicTabInteraction();
 
   /* ── Restore display state on resize ── */
+  let musicLayoutResizeTimer = 0;
   window.addEventListener("resize", () => {
-    const isDesktop = window.innerWidth >= 1025;
-    const sideCol = document.getElementById("mpSideCol");
-    if (isDesktop) {
-      if (sideCol) sideCol.classList.remove("mobile-open");
-      _hideBackdrop();
-      currentMobileTab = null;
-      if (sideCol && !sideCol.dataset.activeTab)
-        sideCol.dataset.activeTab = "queue";
-    } else if (sideCol && !currentMobileTab && sideCol.dataset.activeTab) {
-      currentMobileTab = sideCol.dataset.activeTab;
-    }
-    if (sideCol) _syncTabContentState(sideCol.dataset.activeTab || "queue");
-    _updateTabBtnStates();
+    window.clearTimeout(musicLayoutResizeTimer);
+    musicLayoutResizeTimer = window.setTimeout(() => {
+      const isDesktop = window.innerWidth >= 1025;
+      const sideCol = document.getElementById("mpSideCol");
+      if (isDesktop) {
+        if (sideCol) sideCol.classList.remove("mobile-open");
+        _hideBackdrop();
+        currentMobileTab = null;
+        if (sideCol && !sideCol.dataset.activeTab)
+          sideCol.dataset.activeTab = "queue";
+      } else if (sideCol && !currentMobileTab && sideCol.dataset.activeTab) {
+        currentMobileTab = sideCol.dataset.activeTab;
+      }
+      if (sideCol) _syncTabContentState(sideCol.dataset.activeTab || "queue");
+      _updateTabBtnStates();
+      syncVisualizerState();
+    }, 120);
   });
 
   /* ── Lyrics fetcher — Spotify style with LRC sync ── */
@@ -2408,5 +2516,3 @@ window.applyCrop = function () {
     renderFavsList();
   });
 })();
-
-
