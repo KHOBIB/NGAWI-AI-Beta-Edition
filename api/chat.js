@@ -14,43 +14,77 @@ export default async function handler(req) {
   try {
     const body = await req.json();
 
-    // API Key diambil dari environment variable Vercel (aman, tidak publik)
     const apiKey = process.env.OPENROUTER_API_KEY;
-
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "API key belum diset di Vercel" }),
+        JSON.stringify({ error: { message: "API key belum diset di Vercel" } }),
         { status: 500, headers: { "Content-Type": "application/json" } },
       );
     }
 
-    // Kirim request ke OpenRouter dari SERVER (bukan dari browser)
-    const response = await fetch(
+    const wantsStream = body?.stream === true;
+
+    // Prefer dynamic referer (works on multiple preview domains)
+    const origin =
+      req.headers.get("origin") || "https://ngawi-ai-beta-edition.vercel.app";
+
+    const upstream = await fetch(
       "https://openrouter.ai/api/v1/chat/completions",
       {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://ngawi-ai-beta-edition.vercel.app/", // ganti dengan URL Vercel lu nanti
+          "HTTP-Referer": origin,
           "X-Title": "NGAWI AI",
         },
         body: JSON.stringify(body),
       },
     );
 
-    // Forward streaming response ke browser
-    return new Response(response.body, {
-      status: response.status,
+    // Read error details if any, so client can show real reason
+    if (!upstream.ok) {
+      const errText = await upstream.text().catch(() => "");
+      return new Response(
+        errText ||
+          JSON.stringify({
+            error: { message: `Upstream HTTP ${upstream.status}` },
+          }),
+        {
+          status: upstream.status,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // If client doesn't ask for streaming, return JSON
+    if (!wantsStream) {
+      const jsonText = await upstream.text();
+      return new Response(jsonText, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
+    // Streaming mode
+    return new Response(upstream.body, {
+      status: upstream.status,
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
+        Connection: "keep-alive",
       },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: { message: err?.message || String(err) } }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 }
