@@ -311,16 +311,31 @@ function spawnParticles(btn) {
 window.askAI = async () => {
   const input = document.getElementById("uIn");
   const sendBtn = document.getElementById("sendBtn");
-  const prompt = input.value.trim();
+  const prompt = (input?.value || "").trim();
 
-  if (!prompt && selectedImages.length === 0) {
-    window.showAlert("Isi dulu pertanyaannya atau pilih gambar Rek");
+  // Always have a chat box to write into
+  const box = document.getElementById("chatBox");
+  if (!box) {
+    console.error("chatBox element not found");
     return;
   }
 
+  if (!prompt && (!window.selectedImages || window.selectedImages.length === 0)) {
+    window.showAlert?.("Isi dulu pertanyaannya atau pilih gambar Rek");
+    return;
+  }
+
+  const safeDisable = (v) => {
+    try {
+      if (sendBtn) sendBtn.disabled = v;
+    } catch (_) {}
+  };
+
   try {
-    sendBtn.disabled = true;
-    spawnParticles(sendBtn);
+    safeDisable(true);
+    try {
+      if (sendBtn) spawnParticles(sendBtn);
+    } catch (_) {}
 
     const welcome = document.getElementById("welcome");
     if (welcome) welcome.style.display = "none";
@@ -542,27 +557,41 @@ window.askAI = async () => {
     history.push({ role: "assistant", content: fullStreaming });
   } catch (e) {
     console.error("Chat error:", e);
-    const typingIndicators = document.querySelectorAll(".msg.ai");
-    const tm = typingIndicators[typingIndicators.length - 1];
-    const detail = (e?.message || String(e) || "").slice(0, 500);
-    if (tm)
-      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble"><strong>Chat error</strong><br>${escHtml(detail)}</div>`;
+    // Always show error bubble even if typing indicator wasn't created
+    const detail = (e?.message || String(e) || "Unknown error").slice(0, 800);
+    const d = document.createElement("div");
+    d.className = "msg ai";
+    d.innerHTML = `<div class="ai-avatar">N</div><div class="bubble"><strong>Chat error</strong><br>${(window.escHtml ? escHtml(detail) : detail)}</div>`;
+    box.appendChild(d);
+    box.scrollTop = box.scrollHeight;
   } finally {
-    sendBtn.disabled = false;
+    safeDisable(false);
   }
 };
 
-function addBubble(role, text, id = "") {
-  const box = document.getElementById("chatBox");
-  const d = document.createElement("div");
-  d.className = `msg ${role}`;
-  d.innerHTML =
-    role === "ai"
-      ? `<div class="ai-avatar">N</div><div class="bubble"${id ? ` id="${id}"` : ""}>${formatAssistantMessage(text)}</div>`
-      : `<div class="bubble"${id ? ` id="${id}"` : ""}>${text}</div>`;
-  box.appendChild(d);
-  box.scrollTop = box.scrollHeight;
-}
+// Ensure UI is actually wired to askAI
+document.addEventListener("DOMContentLoaded", () => {
+  const sendBtn = document.getElementById("sendBtn");
+  const input = document.getElementById("uIn");
+
+  if (sendBtn && !sendBtn.__ngawiBound) {
+    sendBtn.__ngawiBound = true;
+    sendBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      window.askAI();
+    });
+  }
+
+  if (input && !input.__ngawiBound) {
+    input.__ngawiBound = true;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        window.askAI();
+      }
+    });
+  }
+});
 
 /* ─────────────────────────────────────────
    PASSWORD STRENGTH
