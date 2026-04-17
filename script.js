@@ -139,27 +139,6 @@ window.autoResizeTA = (el) => {
   el.style.height = Math.min(el.scrollHeight, 140) + "px";
 };
 
-window.escHtml = (str) =>
-  String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-const escHtml = (str) => window.escHtml(str);
-
-function addBubble(role, htmlContent) {
-  const box = document.getElementById("chatBox");
-  if (!box) return;
-
-  const row = document.createElement("div");
-  row.className = `msg ${role === "user" ? "user" : "ai"}`;
-  row.innerHTML =
-    role === "user"
-      ? `<div class="bubble">${htmlContent}</div>`
-      : `<div class="ai-avatar">N</div><div class="bubble">${htmlContent}</div>`;
-  box.appendChild(row);
-  box.scrollTop = box.scrollHeight;
-}
-
 function formatAssistantText(text) {
   return escHtml(text)
     .replace(/\*\*(.*?)\*\*/gs, "<strong>$1</strong>")
@@ -330,35 +309,18 @@ function spawnParticles(btn) {
    AI CHAT — FIXED STREAMING + TRUNCATION BUG
 ───────────────────────────────────────── */
 window.askAI = async () => {
-  if (window.__askAIInFlight) return;
   const input = document.getElementById("uIn");
   const sendBtn = document.getElementById("sendBtn");
-  const prompt = (input?.value || "").trim();
-
-  // Always have a chat box to write into
-  const box = document.getElementById("chatBox");
-  if (!box) {
-    console.error("chatBox element not found");
-    return;
-  }
+  const prompt = input.value.trim();
 
   if (!prompt && selectedImages.length === 0) {
-    window.showAlert?.("Isi dulu pertanyaannya atau pilih gambar Rek");
+    window.showAlert("Isi dulu pertanyaannya atau pilih gambar Rek");
     return;
   }
 
-  const safeDisable = (v) => {
-    try {
-      if (sendBtn) sendBtn.disabled = v;
-    } catch (_) {}
-  };
-
   try {
-    window.__askAIInFlight = true;
-    safeDisable(true);
-    try {
-      if (sendBtn) spawnParticles(sendBtn);
-    } catch (_) {}
+    sendBtn.disabled = true;
+    spawnParticles(sendBtn);
 
     const welcome = document.getElementById("welcome");
     if (welcome) welcome.style.display = "none";
@@ -405,114 +367,36 @@ window.askAI = async () => {
     box.appendChild(typingD);
     box.scrollTop = box.scrollHeight;
 
-    // Keep payload lean: send image base64 only for this request,
-    // but store a compact text marker in local history.
-    const userMsgForApi = {
+    // Add to history (handling multimodal if images present)
+    const newUserMsg = {
       role: "user",
       content: imagesToSubmit.length > 0 ? userMessageContent : prompt,
     };
-    const compactUserText =
-      imagesToSubmit.length > 0
-        ? `${prompt ? `${prompt}\n\n` : ""}[${imagesToSubmit.length} gambar terlampir]`
-        : prompt;
-    history.push({
-      role: "user",
-      content: compactUserText || "[Pesan tanpa teks]",
-    });
+    history.push(newUserMsg);
 
-    // Build outbound messages from compact history + current multimodal message.
-    const baseHistory =
-      history.length > 31 ? [history[0], ...history.slice(-30)] : [...history];
-    let messagesToSend = [...baseHistory, userMsgForApi];
-
-    // Extra guard against Vercel/OpenRouter payload limits.
-    const MAX_PAYLOAD_BYTES = 2_500_000;
-    while (messagesToSend.length > 2) {
-      const bytes = new Blob([JSON.stringify({ messages: messagesToSend })]).size;
-      if (bytes <= MAX_PAYLOAD_BYTES) break;
-      messagesToSend.splice(1, 1); // drop oldest non-system message first
-    }
-
-    // Hard timeout so UI doesn't look stuck
-    const ac = new AbortController();
-    const t = setTimeout(() => ac.abort("timeout"), 30000);
+    // Truncate history to prevent context overflow (keep system + last 30 messages)
+    const messagesToSend =
+      history.length > 32 ? [history[0], ...history.slice(-30)] : history;
 
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      signal: ac.signal,
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",
         messages: messagesToSend,
-        stream: false,
+        stream: true,
         max_tokens: 4096,
         temperature: 0.85,
       }),
     });
-    clearTimeout(t);
 
-    const raw = await res.text().catch(() => "");
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-    if (!res.ok) {
-      // Try parse OpenRouter/Vercel error JSON
-      let msg = raw;
-      try {
-        const j = JSON.parse(raw);
-        msg =
-          j?.error?.message ||
-          j?.message ||
-          (typeof j?.error === "string" ? j.error : "") ||
-          raw;
-      } catch (_) {}
-      throw new Error(msg || `HTTP ${res.status}`);
-    }
-
-    let full = "";
-    try {
-      const j = JSON.parse(raw);
-      full =
-        j?.choices?.[0]?.message?.content ||
-        j?.choices?.[0]?.text ||
-        j?.message?.content ||
-        "";
-      if (!full && j?.error) {
-        full = `Error: ${j.error?.message || JSON.stringify(j.error)}`;
-      }
-    } catch (_) {
-      full = raw;
-    }
-
-    // Replace typing indicator with final bubble
-    const tm = document.getElementById("typing-msg-" + lId);
-    if (tm)
-      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
-    const bubble = document.getElementById(lId);
-    if (bubble)
-      bubble.innerHTML = formatAssistantMessage(full || "(No response)");
-
-    history.push({ role: "assistant", content: full || "" });
-    if (history.length > 80) {
-      history = [history[0], ...history.slice(-79)];
-    }
-    return;
-
-    // --- streaming code below left for reference, but unreachable due to return ---
     const reader = res.body.getReader();
     const decoder = new TextDecoder("utf-8");
-    let fullStreaming = "",
+    let full = "",
       started = false,
       buffer = "";
-
-    const extractDeltaText = (parsed) => {
-      const c0 = parsed?.choices?.[0];
-      const delta = c0?.delta;
-      // OpenAI/OpenRouter streaming shapes can differ by provider
-      return (
-        (typeof delta?.content === "string" ? delta.content : "") ||
-        (typeof delta?.text === "string" ? delta.text : "") ||
-        (typeof c0?.message?.content === "string" ? c0.message.content : "")
-      );
-    };
 
     const processLine = (line) => {
       const trimmed = line.trim();
@@ -521,9 +405,9 @@ window.askAI = async () => {
       if (data === "[DONE]" || !data) return;
       try {
         const parsed = JSON.parse(data);
-        const content = extractDeltaText(parsed);
+        const content = parsed?.choices?.[0]?.delta?.content;
         if (content && typeof content === "string" && content.length > 0) {
-          fullStreaming += content;
+          full += content;
           if (!started) {
             const tm = document.getElementById("typing-msg-" + lId);
             if (tm)
@@ -532,7 +416,7 @@ window.askAI = async () => {
           }
           const bubble = document.getElementById(lId);
           if (bubble) {
-            bubble.innerHTML = formatAssistantMessage(fullStreaming, {
+            bubble.innerHTML = formatAssistantMessage(full, {
               streaming: true,
             });
             box.scrollTop = box.scrollHeight;
@@ -565,77 +449,44 @@ window.askAI = async () => {
       buffer.split("\n").forEach(processLine);
     }
 
-    // If streaming didn't produce content, try read as JSON (non-stream response)
-    if (!fullStreaming || fullStreaming.trim().length < 2) {
-      try {
-        const fallbackText = await res.clone().text();
-        // If it was JSON, try to extract message content
-        try {
-          const j = JSON.parse(fallbackText);
-          const content = j?.choices?.[0]?.message?.content;
-          if (typeof content === "string" && content.trim())
-            fullStreaming = content;
-        } catch (_) {
-          // Not JSON, use raw text if meaningful
-          if (fallbackText && fallbackText.trim().length > 10)
-            fullStreaming = fallbackText;
-        }
-      } catch (_) {}
-    }
-
     // Fallback: response terlalu pendek/terpotong
-    if (!fullStreaming || fullStreaming.trim().length < 15) {
-      fullStreaming =
-        "Waduh maaf Rek, kayaknya jawaban gue ke-cut atau koneksi lagi gangguan nih. Coba kirim lagi pertanyaan lu ya.";
+    if (!full || full.trim().length < 15) {
+      full =
+        "Waduh maaf Rek, kayaknya jawaban gue ke-cut atau koneksi lagi gangguan nih. Coba kirim lagi pertanyaan lu ya, gue bakal jawab yang lengkap dan bener. Pastiin koneksi lu stabil juga biar streaming-nya lancar! 😹";
       const tm = document.getElementById("typing-msg-" + lId);
       if (tm) {
         if (!started)
           tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
         const bubble = document.getElementById(lId);
-        if (bubble) bubble.innerHTML = formatAssistantMessage(fullStreaming);
+        if (bubble) bubble.innerHTML = formatAssistantMessage(full);
       }
     }
 
     document.getElementById(lId)?.querySelector(".typing-cursor")?.remove();
-    history.push({ role: "assistant", content: fullStreaming });
+    history.push({ role: "assistant", content: full });
   } catch (e) {
     console.error("Chat error:", e);
-    // Always show error bubble even if typing indicator wasn't created
-    const detail = (e?.message || String(e) || "Unknown error").slice(0, 800);
-    const d = document.createElement("div");
-    d.className = "msg ai";
-    d.innerHTML = `<div class="ai-avatar">N</div><div class="bubble"><strong>Chat error</strong><br>${(window.escHtml ? escHtml(detail) : detail)}</div>`;
-    box.appendChild(d);
-    box.scrollTop = box.scrollHeight;
+    // Find the latest typing-indicator and show error
+    const typingIndicators = document.querySelectorAll(".msg.ai");
+    const tm = typingIndicators[typingIndicators.length - 1];
+    if (tm)
+      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble">Koneksi error Rek! Coba lagi ya, mungkin koneksi lu lagi lemot atau server lagi sibuk. 😹</div>`;
   } finally {
-    window.__askAIInFlight = false;
-    safeDisable(false);
+    sendBtn.disabled = false;
   }
 };
 
-// Ensure UI is actually wired to askAI
-document.addEventListener("DOMContentLoaded", () => {
-  const sendBtn = document.getElementById("sendBtn");
-  const input = document.getElementById("uIn");
-
-  if (sendBtn && !sendBtn.__ngawiBound) {
-    sendBtn.__ngawiBound = true;
-    sendBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      window.askAI();
-    });
-  }
-
-  if (input && !input.__ngawiBound) {
-    input.__ngawiBound = true;
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        window.askAI();
-      }
-    });
-  }
-});
+function addBubble(role, text, id = "") {
+  const box = document.getElementById("chatBox");
+  const d = document.createElement("div");
+  d.className = `msg ${role}`;
+  d.innerHTML =
+    role === "ai"
+      ? `<div class="ai-avatar">N</div><div class="bubble"${id ? ` id="${id}"` : ""}>${formatAssistantMessage(text)}</div>`
+      : `<div class="bubble"${id ? ` id="${id}"` : ""}>${text}</div>`;
+  box.appendChild(d);
+  box.scrollTop = box.scrollHeight;
+}
 
 /* ─────────────────────────────────────────
    PASSWORD STRENGTH
