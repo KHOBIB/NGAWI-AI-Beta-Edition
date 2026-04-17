@@ -384,7 +384,10 @@ window.askAI = async () => {
       body: JSON.stringify({
         model: "google/gemini-2.0-flash-001",
         messages: messagesToSend,
-        stream: true,
+        // NOTE: /api/chat currently just forwards OpenRouter response.
+        // Some models/providers may not reliably stream via edge runtime.
+        // Use non-stream response for maximum compatibility.
+        stream: false,
         max_tokens: 4096,
         temperature: 0.85,
       }),
@@ -399,20 +402,44 @@ window.askAI = async () => {
       throw new Error(`HTTP ${res.status}${details ? ` — ${details}` : ""}`);
     }
 
-    // Some platforms might not stream in certain error cases
-    if (!res.body) {
-      const txt = await res.text().catch(() => "");
-      if (txt) {
-        addBubble("ai", txt);
-        history.push({ role: "assistant", content: txt });
-        return;
+    // Non-stream JSON response (OpenRouter)
+    const raw = await res.text();
+    let full = "";
+    try {
+      const j = JSON.parse(raw);
+      full =
+        j?.choices?.[0]?.message?.content ||
+        j?.choices?.[0]?.text ||
+        j?.message?.content ||
+        "";
+
+      // Surface server/provider errors if present
+      if (!full && j?.error) {
+        const msg =
+          typeof j.error === "string"
+            ? j.error
+            : j.error?.message || JSON.stringify(j.error);
+        full = `Error: ${msg}`;
       }
-      throw new Error("Empty response body");
+    } catch (_) {
+      // If backend responded with plain text, show it
+      full = raw;
     }
 
+    // Replace typing indicator with final bubble
+    const tm = document.getElementById("typing-msg-" + lId);
+    if (tm)
+      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
+    const bubble = document.getElementById(lId);
+    if (bubble) bubble.innerHTML = formatAssistantMessage(full || "(No response)");
+
+    history.push({ role: "assistant", content: full || "" });
+    return;
+
+    // --- streaming code below left for reference, but unreachable due to return ---
     const reader = res.body.getReader();
     const decoder = new TextDecoder("utf-8");
-    let full = "",
+    let fullStreaming = "",
       started = false,
       buffer = "";
 
@@ -436,7 +463,7 @@ window.askAI = async () => {
         const parsed = JSON.parse(data);
         const content = extractDeltaText(parsed);
         if (content && typeof content === "string" && content.length > 0) {
-          full += content;
+          fullStreaming += content;
           if (!started) {
             const tm = document.getElementById("typing-msg-" + lId);
             if (tm)
@@ -445,7 +472,7 @@ window.askAI = async () => {
           }
           const bubble = document.getElementById(lId);
           if (bubble) {
-            bubble.innerHTML = formatAssistantMessage(full, {
+            bubble.innerHTML = formatAssistantMessage(fullStreaming, {
               streaming: true,
             });
             box.scrollTop = box.scrollHeight;
@@ -479,37 +506,37 @@ window.askAI = async () => {
     }
 
     // If streaming didn't produce content, try read as JSON (non-stream response)
-    if (!full || full.trim().length < 2) {
+    if (!fullStreaming || fullStreaming.trim().length < 2) {
       try {
         const fallbackText = await res.clone().text();
         // If it was JSON, try to extract message content
         try {
           const j = JSON.parse(fallbackText);
           const content = j?.choices?.[0]?.message?.content;
-          if (typeof content === "string" && content.trim()) full = content;
+          if (typeof content === "string" && content.trim()) fullStreaming = content;
         } catch (_) {
           // Not JSON, use raw text if meaningful
           if (fallbackText && fallbackText.trim().length > 10)
-            full = fallbackText;
+            fullStreaming = fallbackText;
         }
       } catch (_) {}
     }
 
     // Fallback: response terlalu pendek/terpotong
-    if (!full || full.trim().length < 15) {
-      full =
+    if (!fullStreaming || fullStreaming.trim().length < 15) {
+      fullStreaming =
         "Waduh maaf Rek, kayaknya jawaban gue ke-cut atau koneksi lagi gangguan nih. Coba kirim lagi pertanyaan lu ya.";
       const tm = document.getElementById("typing-msg-" + lId);
       if (tm) {
         if (!started)
           tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
         const bubble = document.getElementById(lId);
-        if (bubble) bubble.innerHTML = formatAssistantMessage(full);
+        if (bubble) bubble.innerHTML = formatAssistantMessage(fullStreaming);
       }
     }
 
     document.getElementById(lId)?.querySelector(".typing-cursor")?.remove();
-    history.push({ role: "assistant", content: full });
+    history.push({ role: "assistant", content: fullStreaming });
   } catch (e) {
     console.error("Chat error:", e);
     // Find the latest typing-indicator and show error
