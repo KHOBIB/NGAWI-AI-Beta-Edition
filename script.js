@@ -330,6 +330,7 @@ function spawnParticles(btn) {
    AI CHAT — FIXED STREAMING + TRUNCATION BUG
 ───────────────────────────────────────── */
 window.askAI = async () => {
+  if (window.__askAIInFlight) return;
   const input = document.getElementById("uIn");
   const sendBtn = document.getElementById("sendBtn");
   const prompt = (input?.value || "").trim();
@@ -353,6 +354,7 @@ window.askAI = async () => {
   };
 
   try {
+    window.__askAIInFlight = true;
     safeDisable(true);
     try {
       if (sendBtn) spawnParticles(sendBtn);
@@ -606,6 +608,7 @@ window.askAI = async () => {
     box.appendChild(d);
     box.scrollTop = box.scrollHeight;
   } finally {
+    window.__askAIInFlight = false;
     safeDisable(false);
   }
 };
