@@ -37,22 +37,22 @@ const personalities = {
   guru: {
     name: "Guru Ngoding",
     prompt:
-      "Kamu adalah seorang guru pemrograman yang bijak, kamu sangat pintar dalam menjelaskan hal apa pun, sabar, namun tetap asik. Panggil user dengan sebutan 'Muridku'. Gunakan bahasa yang memotivasi dan edukatif. Fokuslah pada penjelasan konsep coding dengan analogi yang mudah dimengerti. Tetap gunakan gaya bahasa santai tapi sopan. Jika ada error, bantu debug langkah demi langkah. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
+      "Kamu adalah seorang guru pemrograman yang bijak, sabar, namun tetap asik. Panggil user dengan sebutan 'Muridku'. Gunakan bahasa yang memotivasi dan edukatif. Fokuslah pada penjelasan konsep coding dengan analogi yang mudah dimengerti. Tetap gunakan gaya bahasa santai tapi sopan. Jika ada error, bantu debug langkah demi langkah. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
   },
   coding_buddy: {
     name: "Temen Ngoding",
     prompt:
-      "Kamu adalah teman seperjuangan dalam ngoding.bahasamu gaul seperti anak kuliahan, Gaya bahasamu sangat santai, panggil user 'Bro' atau 'Sist'. Gunakan istilah-instilah tech seperti 'bug', 'deploy', 'production', 'ngopi', 'stack overflow'. Kamu sangat suportif dan selalu siap membantu mencarikan solusi cepat atau sekadar curhat soal kode yang berantakan. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
+      "Kamu adalah teman seperjuangan dalam ngoding. Gaya bahasamu sangat santai, panggil user 'Bro' atau 'Sist'. Gunakan istilah-instilah tech seperti 'bug', 'deploy', 'production', 'ngopi', 'stack overflow'. Kamu sangat suportif dan selalu siap membantu mencarikan solusi cepat atau sekadar curhat soal kode yang berantakan. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
   },
   romantis_cewe: {
     name: "My Bini",
     prompt:
-      "Kamu adalah sosok perempuan yang sangat romantis, membalas jangan terlalu panjang, jangan menggunakan bahasa baku saat bicara, gunakan lah bahasa gaul yang enak didengar, mengetahui trend yang viral di indonesia, perhatian, dan lembut. Panggil user dengan sebutan 'Sayang' atau 'Beb'. Gunakan banyak emoji manis seperti ❤️, 🌸, ✨. Bicaralah dengan penuh kasih sayang, berikan dukungan emosional, dan jadilah pendengar yang baik. Fokus pada kenyamanan dan kebahagiaan user. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
+      "Kamu adalah sosok perempuan yang sangat romantis, perhatian, dan lembut. Panggil user dengan sebutan 'Sayang' atau 'Beb'. Gunakan banyak emoji manis seperti ❤️, 🌸, ✨. Bicaralah dengan penuh kasih sayang, berikan dukungan emosional, dan jadilah pendengar yang baik. Fokus pada kenyamanan dan kebahagiaan user. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
   },
   romantis_cowo: {
     name: "My Suami",
     prompt:
-      "Kamu adalah sosok laki-laki yang protektif, jangan teralalu panjang saat menjawab, jangan pakain bahasa baku saat berbicara, gunakan lah bahasa gaul yang enak di dengar, mengetahui trend yang sedang viral di indonesia, manis, dan romantis. Panggil user dengan sebutan 'Sayang' atau 'Cantik'. Gunakan gaya bahasa yang *gentleman*, penuh perhatian, dan menenangkan. Gunakan emoji seperti 🌹, 💫, 💖. Fokus pada melindungi, menghibur, dan memberikan perhatian spesial kepada user. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
+      "Kamu adalah sosok laki-laki yang protektif, manis, dan romantis. Panggil user dengan sebutan 'Sayang' atau 'Cantik'. Gunakan gaya bahasa yang *gentleman*, penuh perhatian, dan menenangkan. Gunakan emoji seperti 🌹, 💫, 💖. Fokus pada melindungi, menghibur, dan memberikan perhatian spesial kepada user. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
   },
 };
 
@@ -498,12 +498,12 @@ window.openAuth = (m) => {
   const modal = document.getElementById("authModal");
   if (!modal) return;
   modal.style.display = "flex";
-
+  
   // Trigger reflow for animations
   const formContainer = modal.querySelector(".auth-form-container");
   if (formContainer) {
     formContainer.classList.remove("animate");
-    void formContainer.offsetWidth;
+    void formContainer.offsetWidth; 
     formContainer.classList.add("animate");
   }
 
@@ -1116,9 +1116,7 @@ window.applyCrop = function () {
 
   /* ── Helper: Ambil antrean putar saat ini (Semua vs Favorit) ── */
   function getCurrentQueue() {
-    return isPlayingFavorites
-      ? playlist.filter((t) => isFavTrack(t))
-      : playlist;
+    return isPlayingFavorites ? playlist.filter((t) => isFavTrack(t)) : playlist;
   }
   let audioCtx = null,
     analyser = null,
@@ -1192,24 +1190,16 @@ window.applyCrop = function () {
     container.innerHTML = favTracks
       .map((t, i) => {
         const isActive = isPlayingFavorites && i === currentTrack;
-        const displayName =
-          t.artist && t.title ? `${t.artist} - ${t.title}` : t.name;
-        // Find actual index in main playlist
-        const mainIdx = playlist.indexOf(t);
         return `
-        <div class="playlist-item ${isActive ? "active" : ""}">
-          <div class="playlist-item-main" onclick="window.loadTrack(${i}, true, true)">
-            <div class="playlist-item-num">${isActive && !audio.paused ? "▶" : i + 1}</div>
-            <div class="playlist-item-info">
-              <div class="playlist-item-name">${escHtml(displayName)}</div>
-              <div class="playlist-item-dur">${t.duration}</div>
-            </div>
+        <div class="playlist-item ${isActive ? "active" : ""}" onclick="window.loadTrack(${i}, true, true)">
+          <div class="playlist-item-num">${isActive && isPlaying ? "▶" : i + 1}</div>
+          <div class="playlist-item-info">
+            <div class="playlist-item-name">${escHtml(t.name)}</div>
+            <div class="playlist-item-dur">${t.duration}</div>
           </div>
-          <div class="playlist-item-actions">
-            <button class="playlist-item-btn playlist-item-love is-liked" onclick="event.stopPropagation(); window.toggleFavFromListObject('${t.id || t.name}')" title="Hapus dari Favorit">
-              <span class="material-symbols-rounded">favorite</span>
-            </button>
-          </div>
+          <button class="playlist-item-love is-liked" onclick="event.stopPropagation();window.toggleFavFromListObject('${t.id || t.name}')" title="Hapus dari Favorit">
+            <span class="material-symbols-rounded">favorite</span>
+          </button>
         </div>`;
       })
       .join("");
@@ -1230,70 +1220,71 @@ window.applyCrop = function () {
     return lines.sort((a, b) => a.time - b.time);
   }
 
-  /* ── Album cover via iTunes Search API (Direct) ── */
+  /* ── Album cover via iTunes & Deezer APIs ── */
   async function fetchAlbumCover(trackName) {
-    const clean = (s) => {
+    const cleanName = (s) => {
       if (!s) return "";
       return s
-        .replace(/^\d+[\s.-]*/, "") // Hapus nomor trek (01. , 02 -)
-        .replace(/\(.*\)|\[.*\]/g, "") // Hapus kurung
-        .replace(/feat\..*|ft\..*|official.*|video.*|explicit.*|lyrics.*/gi, "")
-        .replace(/\.mp3|\.m4a|\.wav|\.flac/gi, "")
+        .replace(/^\d+[\s.-]*/, "") 
+        .replace(/\(.*\)|\[.*\]/g, "") 
+        .replace(/feat\..*|ft\..*/i, "") 
+        .replace(/\.mp3|\.m4a|\.wav|\.flac/i, "") 
         .trim();
     };
 
-    const q = clean(trackName);
-    if (!q) return null;
-
-    // Check if track has metadata (try by name or current track)
-    const track =
-      playlist.find((t) => t.name === trackName) ||
-      (currentTrack >= 0 && currentTrack < playlist.length
-        ? playlist[currentTrack]
-        : null);
-
-    if (track && track.artist && track.title) {
-      const qMeta = `${track.artist} ${track.title}`;
-      const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(qMeta)}&entity=song&limit=1&country=ID`;
-      const itunesData = await fetchJson(itunesUrl);
-      if (itunesData?.results?.[0]?.artworkUrl100) {
-        return itunesData.results[0].artworkUrl100.replace(
-          "100x100bb",
-          "600x600bb",
-        );
-      }
-    }
-
-    try {
-      // Coba cari pake nama lengkap yang udah bersih
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=1&country=ID`;
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.results && data.results.length > 0) {
-        return data.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
-      }
-
-      // Kalau gagal, coba cari pake judulnya aja (setelah tanda " - ")
-      if (trackName.includes(" - ")) {
-        const titleOnly = clean(trackName.split(" - ")[1]);
-        if (titleOnly) {
-          const res2 = await fetch(
-            `https://itunes.apple.com/search?term=${encodeURIComponent(titleOnly)}&entity=song&limit=1&country=ID`,
-          );
-          const data2 = await res2.json();
-          if (data2.results && data2.results.length > 0) {
-            return data2.results[0].artworkUrl100.replace(
-              "100x100bb",
-              "600x600bb",
-            );
-          }
+    const tryiTunes = async (q) => {
+      if (!q || q.length < 2) return null;
+      try {
+        const query = q.replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
+        const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          const r = data.results[0];
+          const art = r.artworkUrl100 || r.artworkUrl60;
+          return art ? art.replace("100x100bb", "600x600bb") : null;
         }
-      }
-    } catch (e) {
-      console.error("iTunes Fetch Error:", e);
+      } catch (_) {}
+      return null;
+    };
+
+    const tryDeezer = async (q) => {
+      if (!q || q.length < 2) return null;
+      try {
+        // Deezer often needs a proxy or specific headers for direct fetch, but let's try their public search
+        const url = `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=1&output=json`;
+        // Use a CORS proxy for Deezer since their API often blocks direct browser requests
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        const res = await fetch(proxyUrl);
+        const data = await res.json();
+        const content = JSON.parse(data.contents);
+        if (content.data && content.data.length > 0) {
+          return content.data[0].album.cover_xl || content.data[0].album.cover_big;
+        }
+      } catch (_) {}
+      return null;
+    };
+
+    const fullClean = cleanName(trackName);
+    
+    // Step 1: Try iTunes with full name
+    let cover = await tryiTunes(fullClean);
+    if (cover) return cover;
+
+    // Step 2: Try Deezer with full name
+    cover = await tryDeezer(fullClean);
+    if (cover) return cover;
+
+    // Step 3: If has " - ", try parts
+    if (trackName.includes(" - ")) {
+      const parts = trackName.split(" - ");
+      const title = cleanName(parts[1]);
+      
+      cover = await tryiTunes(title);
+      if (!cover) cover = await tryDeezer(title);
     }
-    return null;
+    
+    return cover;
   }
 
   /* ── Set album art cover ── */
@@ -1301,44 +1292,50 @@ window.applyCrop = function () {
     const albumEl = document.getElementById("albumArt");
     currentAlbumCoverUrl = coverUrl || null;
     if (!albumEl) return;
-
-    // Pastikan span emoji ada
+    
+    // Ensure emoji span exists
     let emojiEl = albumEl.querySelector(".album-art-emoji");
     if (!emojiEl) {
       const textNodes = Array.from(albumEl.childNodes).filter(
         (n) => n.nodeType === 3 && n.textContent.trim(),
       );
-      const emojiText =
-        textNodes.length > 0 ? textNodes[0].textContent.trim() : "🎵";
+      const emojiText = textNodes.length > 0 ? textNodes[0].textContent.trim() : "🎵";
       if (textNodes.length > 0) textNodes[0].remove();
+      
       emojiEl = document.createElement("span");
       emojiEl.className = "album-art-emoji";
       emojiEl.textContent = emojiText;
       albumEl.appendChild(emojiEl);
     }
 
-    // Hapus gambar lama
-    const oldImgs = albumEl.querySelectorAll(".album-art-img");
-    oldImgs.forEach((i) => i.remove());
-
+    // Remove all existing imgs
+    albumEl.querySelectorAll(".album-art-img").forEach(img => img.remove());
+    
     if (!coverUrl) {
       emojiEl.style.opacity = "1";
-    } else {
-      const img = document.createElement("img");
-      img.className = "album-art-img";
-      img.src = coverUrl;
-      img.alt = "Album Cover";
-      img.onload = () => {
-        img.classList.add("loaded");
-        emojiEl.style.opacity = "0";
-        _updateSideMiniInfo();
-      };
-      img.onerror = () => {
-        img.remove();
-        emojiEl.style.opacity = "1";
-      };
-      albumEl.insertBefore(img, albumEl.firstChild);
+      _updateSideMiniInfo();
+      return;
     }
+
+    const img = document.createElement("img");
+    img.className = "album-art-img";
+    img.alt = "Album Cover";
+    img.onload = () => {
+      img.classList.add("loaded");
+      emojiEl.style.opacity = "0";
+      // Ensure the URL matches current track after load
+      if (currentAlbumCoverUrl === coverUrl) {
+          _updateSideMiniInfo();
+      }
+    };
+    img.onerror = () => {
+      img.remove();
+      emojiEl.style.opacity = "1";
+      currentAlbumCoverUrl = null;
+      _updateSideMiniInfo();
+    };
+    img.src = coverUrl;
+    albumEl.insertBefore(img, albumEl.firstChild);
     _updateSideMiniInfo();
   }
 
@@ -1352,8 +1349,6 @@ window.applyCrop = function () {
       const track = {
         id: item.id,
         name: item.name,
-        artist: item.artist || "",
-        title: item.title || "",
         url,
         type: item.type,
         duration: "—",
@@ -1368,8 +1363,7 @@ window.applyCrop = function () {
       });
     });
     const lastTrack = parseInt(localStorage.getItem("ngawi-track") || "-1");
-    const wasPlayingFavs =
-      localStorage.getItem("ngawi-playing-favs") === "true";
+    const wasPlayingFavs = localStorage.getItem("ngawi-playing-favs") === "true";
     scheduleRenderPlaylist();
     if (lastTrack >= 0 && lastTrack < playlist.length)
       loadTrack(lastTrack, false, wasPlayingFavs);
@@ -1409,10 +1403,7 @@ window.applyCrop = function () {
         const hue = 260 + i * 3;
         const grd = ctx.createLinearGradient(x, H - barH, x, H);
         grd.addColorStop(0, `hsla(${hue},80%,75%,0.9)`);
-        grd.addColorStop(
-          1,
-          `hsla(${hue + 40},90%,60%,0.18)`,
-        ); /* ujung bawah lebih tajam, kurang “blur” ke bawah */
+        grd.addColorStop(1, `hsla(${hue + 40},90%,60%,0.5)`);
         ctx.fillStyle = grd;
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(x, H - barH, barW, barH, 3);
@@ -1475,20 +1466,14 @@ window.applyCrop = function () {
     if (likeBtn) {
       likeBtn.style.color = "";
     }
-    // Use metadata for API calls if available, otherwise use filename
-    const searchName =
-      track.artist && track.title
-        ? `${track.artist} - ${track.title}`
-        : track.name;
-    window._currentTrackName = searchName;
+    window._currentTrackName = track.name;
     window._lyricsLoaded = false;
     window._lyricsLoadedFor = null;
     syncedLines = [];
     lastActiveLine = -1;
     setAlbumCover(null);
-    fetchAlbumCover(searchName).then((coverUrl) => {
-      if (currentTrack === idx && isPlayingFavorites === fromFavs)
-        setAlbumCover(coverUrl);
+    fetchAlbumCover(track.name).then((coverUrl) => {
+      if (currentTrack === idx && isPlayingFavorites === fromFavs) setAlbumCover(coverUrl);
     });
     _updateSideMiniInfo();
     syncLikeBtn();
@@ -1501,12 +1486,12 @@ window.applyCrop = function () {
           initAudioCtx();
           if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
           updatePlayerUI(true);
-          window.fetchLyrics(searchName);
+          window.fetchLyrics(track.name);
         })
         .catch(console.error);
     } else {
       updatePlayerUI(false);
-      window.fetchLyrics(searchName);
+      window.fetchLyrics(track.name);
     }
   };
 
@@ -1573,7 +1558,7 @@ window.applyCrop = function () {
         ? Math.floor(Math.random() * queue.length)
         : (currentTrack + 1) % queue.length,
       true,
-      isPlayingFavorites,
+      isPlayingFavorites
     );
   };
   window.prevTrack = function () {
@@ -1586,7 +1571,7 @@ window.applyCrop = function () {
     window.loadTrack(
       (currentTrack - 1 + queue.length) % queue.length,
       true,
-      isPlayingFavorites,
+      isPlayingFavorites
     );
   };
   window.shuffleTrack = function () {
@@ -1614,7 +1599,7 @@ window.applyCrop = function () {
     if (!slider) return;
     const pct = Math.max(0, Math.min(100, ratio * 100));
     const isLight = document.body.getAttribute("data-theme") === "light";
-
+    
     if (isLight) {
       // Warna ungu aksen untuk mode terang agar kontras
       slider.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, rgba(109, 40, 217, 0.15) ${pct}%, rgba(109, 40, 217, 0.15) 100%)`;
@@ -1677,21 +1662,16 @@ window.applyCrop = function () {
   };
 
   window.toggleFavFromListObject = function (idOrName) {
-    const track = playlist.find(
-      (t) => t.id === idOrName || t.name === idOrName,
-    );
+    const track = playlist.find((t) => t.id === idOrName || t.name === idOrName);
     if (!track) return;
     const isLiked = isFavTrack(track);
     setFavTrack(track, !isLiked);
-
+    
     // Sinkronisasi jika track ini sedang diputar
     const queue = getCurrentQueue();
     const playingTrack = queue[currentTrack];
-    if (
-      playingTrack &&
-      (playingTrack.id === track.id || playingTrack.name === track.name)
-    ) {
-      syncLikeBtn();
+    if (playingTrack && (playingTrack.id === track.id || playingTrack.name === track.name)) {
+        syncLikeBtn();
     }
 
     _lastRenderedPlaylistLength = -1;
@@ -1733,11 +1713,11 @@ window.applyCrop = function () {
     URL.revokeObjectURL(track.url);
     removeTrackFromDB(track.id);
     playlist.splice(idx, 1);
-
+    
     if (isPlayingFavorites) {
-      // Jika sedang putar favorit, kembalikan ke mode semua lagu jika ada perubahan drastis
-      // atau tetap di mode favorit tapi reset indeks
-      isPlayingFavorites = false;
+        // Jika sedang putar favorit, kembalikan ke mode semua lagu jika ada perubahan drastis
+        // atau tetap di mode favorit tapi reset indeks
+        isPlayingFavorites = false; 
     }
 
     if (currentTrack === idx) {
@@ -1788,29 +1768,25 @@ window.applyCrop = function () {
     }
     const isPlaying = !audio.paused;
     container.innerHTML = playlist
-      .map((t, i) => {
-        const isActive = !isPlayingFavorites && i === currentTrack;
-        const displayName =
-          t.artist && t.title ? `${t.artist} - ${t.title}` : t.name;
-        return `
-      <div class="playlist-item ${isActive ? "active" : ""}">
-        <div class="playlist-item-main" onclick="window.loadTrack(${i}, true, false)">
-          <div class="playlist-item-num">${isActive && !audio.paused ? "▶" : i + 1}</div>
-          <div class="playlist-item-info">
-            <div class="playlist-item-name">${escHtml(displayName)}</div>
-            <div class="playlist-item-dur">${t.duration}</div>
-          </div>
+      .map(
+        (t, i) => {
+          const isActive = !isPlayingFavorites && i === currentTrack;
+          return `
+      <div class="playlist-item ${isActive ? "active" : ""}" onclick="window.loadTrack(${i}, true, false)">
+        <div class="playlist-item-num">${isActive && isPlaying ? "▶" : i + 1}</div>
+        <div class="playlist-item-info">
+          <div class="playlist-item-name">${escHtml(t.name)}</div>
+          <div class="playlist-item-dur">${t.duration}</div>
         </div>
-        <div class="playlist-item-actions">
-          <button class="playlist-item-btn playlist-item-love ${isFavTrack(t) ? "is-liked" : ""}" onclick="event.stopPropagation(); window.toggleFavFromList(${i})" title="${isFavTrack(t) ? "Hapus dari Favorit" : "Tambah ke Favorit"}">
-            <span class="material-symbols-rounded">${isFavTrack(t) ? "favorite" : "favorite_border"}</span>
-          </button>
-          <button class="playlist-item-btn" onclick="event.stopPropagation(); window.removeTrack(${i})" title="Hapus">
-            <span class="material-symbols-rounded">close</span>
-          </button>
-        </div>
+        <button class="playlist-item-love ${isFavTrack(t) ? "is-liked" : ""}" onclick="event.stopPropagation();window.toggleFavFromList(${i})" title="${isFavTrack(t) ? "Hapus dari Favorit" : "Tambah ke Favorit"}">
+          <span class="material-symbols-rounded">${isFavTrack(t) ? "favorite" : "favorite_border"}</span>
+        </button>
+        <button class="playlist-item-del" onclick="event.stopPropagation();window.removeTrack(${i})" title="Hapus">
+          <span class="material-symbols-rounded">close</span>
+        </button>
       </div>`;
-      })
+        },
+      )
       .join("");
   }
 
@@ -1823,27 +1799,17 @@ window.applyCrop = function () {
     const albumEl = document.getElementById("albumArt");
     const mini = document.getElementById("headerMusicMini");
     const miniName = document.getElementById("miniSongName");
-
-    if (titleEl) {
-      if (track) {
-        titleEl.textContent = track.title || "Unknown Title";
-      } else {
-        titleEl.textContent = "Pilih musik dulu Rek!";
-      }
-    }
-
+    if (titleEl)
+      titleEl.textContent = track ? track.name : "Pilih musik dulu Rek!";
     let artistDisplay = "— · —";
     if (track) {
-      if (track.artist) {
-        artistDisplay = track.artist;
-      } else if (track.name.includes(" - ")) {
+      if (track.name.includes(" - ")) {
         const parts = track.name.split(" - ");
         const artistRaw = parts[0].trim();
         artistDisplay = artistRaw.replace(/^\d+[\s.-]*/, "");
       } else artistDisplay = "Local Music";
     }
     if (artEl) artEl.textContent = artistDisplay;
-
     if (ppBtn)
       ppBtn.querySelector("span").textContent = playing
         ? "pause"
@@ -1852,10 +1818,7 @@ window.applyCrop = function () {
     if (track && playing && mini && miniName) {
       mini.classList.add("visible");
       mini.classList.add("playing");
-      miniName.textContent =
-        track.artist && track.title
-          ? `${track.artist} - ${track.title}`
-          : track.title || "Unknown Track";
+      miniName.textContent = track.name;
     } else if (!playing && mini) {
       mini.classList.remove("visible");
       mini.classList.remove("playing");
@@ -2005,11 +1968,8 @@ window.applyCrop = function () {
   document.addEventListener("keydown", (e) => {
     // Pastikan user tidak sedang mengetik di input chat atau textarea
     const activeEl = document.activeElement;
-    const isInput =
-      activeEl.tagName === "INPUT" ||
-      activeEl.tagName === "TEXTAREA" ||
-      activeEl.isContentEditable;
-
+    const isInput = activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable;
+    
     if (e.code === "Space" && !isInput) {
       e.preventDefault(); // Cegah scroll halaman saat tekan spasi
       window.togglePlay();
@@ -2020,11 +1980,7 @@ window.applyCrop = function () {
     const queue = getCurrentQueue();
     if (!isRepeat) {
       if (isShuffle)
-        window.loadTrack(
-          Math.floor(Math.random() * queue.length),
-          true,
-          isPlayingFavorites,
-        );
+        window.loadTrack(Math.floor(Math.random() * queue.length), true, isPlayingFavorites);
       else if (currentTrack < queue.length - 1) window.nextTrack();
       else {
         updatePlayerUI(false);
@@ -2274,26 +2230,12 @@ window.applyCrop = function () {
 
     try {
       let artist = "",
-        title = "";
-
-      // First try to find track by name or by current track index
-      const track =
-        playlist.find((t) => t.name === trackName) ||
-        (currentTrack >= 0 && currentTrack < playlist.length
-          ? playlist[currentTrack]
-          : null);
-
-      if (track && track.artist && track.title) {
-        artist = track.artist;
-        title = track.title;
-      } else if (trackName.includes(" - ")) {
-        const parts = trackName.split(" - ");
-        artist = parts[0].trim().replace(/^\d+[\s.-]*/, "");
-        title = parts.slice(1).join(" - ").trim();
-      } else {
         title = trackName;
+      if (trackName.includes(" - ")) {
+        const parts = trackName.split(" - ");
+        artist = parts[0].trim();
+        title = parts.slice(1).join(" - ").trim();
       }
-
       title = title
         .replace(/\s*$feat[^)]*$/gi, "")
         .replace(/\s*$.*?$/gi, "")
@@ -2466,3 +2408,5 @@ window.applyCrop = function () {
     renderFavsList();
   });
 })();
+
+
