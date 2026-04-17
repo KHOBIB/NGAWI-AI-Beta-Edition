@@ -403,16 +403,33 @@ window.askAI = async () => {
     box.appendChild(typingD);
     box.scrollTop = box.scrollHeight;
 
-    // Add to history (handling multimodal if images present)
-    const newUserMsg = {
+    // Keep payload lean: send image base64 only for this request,
+    // but store a compact text marker in local history.
+    const userMsgForApi = {
       role: "user",
       content: imagesToSubmit.length > 0 ? userMessageContent : prompt,
     };
-    history.push(newUserMsg);
+    const compactUserText =
+      imagesToSubmit.length > 0
+        ? `${prompt ? `${prompt}\n\n` : ""}[${imagesToSubmit.length} gambar terlampir]`
+        : prompt;
+    history.push({
+      role: "user",
+      content: compactUserText || "[Pesan tanpa teks]",
+    });
 
-    // Truncate history to prevent context overflow (keep system + last 30 messages)
-    const messagesToSend =
-      history.length > 32 ? [history[0], ...history.slice(-30)] : history;
+    // Build outbound messages from compact history + current multimodal message.
+    const baseHistory =
+      history.length > 31 ? [history[0], ...history.slice(-30)] : [...history];
+    let messagesToSend = [...baseHistory, userMsgForApi];
+
+    // Extra guard against Vercel/OpenRouter payload limits.
+    const MAX_PAYLOAD_BYTES = 2_500_000;
+    while (messagesToSend.length > 2) {
+      const bytes = new Blob([JSON.stringify({ messages: messagesToSend })]).size;
+      if (bytes <= MAX_PAYLOAD_BYTES) break;
+      messagesToSend.splice(1, 1); // drop oldest non-system message first
+    }
 
     // Hard timeout so UI doesn't look stuck
     const ac = new AbortController();
@@ -472,6 +489,9 @@ window.askAI = async () => {
       bubble.innerHTML = formatAssistantMessage(full || "(No response)");
 
     history.push({ role: "assistant", content: full || "" });
+    if (history.length > 80) {
+      history = [history[0], ...history.slice(-79)];
+    }
     return;
 
     // --- streaming code below left for reference, but unreachable due to return ---
