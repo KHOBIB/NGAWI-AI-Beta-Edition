@@ -390,13 +390,42 @@ window.askAI = async () => {
       }),
     });
 
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // If API returns error JSON, show it clearly
+    if (!res.ok) {
+      let details = "";
+      try {
+        details = await res.text();
+      } catch (_) {}
+      throw new Error(`HTTP ${res.status}${details ? ` — ${details}` : ""}`);
+    }
+
+    // Some platforms might not stream in certain error cases
+    if (!res.body) {
+      const txt = await res.text().catch(() => "");
+      if (txt) {
+        addBubble("ai", txt);
+        history.push({ role: "assistant", content: txt });
+        return;
+      }
+      throw new Error("Empty response body");
+    }
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder("utf-8");
     let full = "",
       started = false,
       buffer = "";
+
+    const extractDeltaText = (parsed) => {
+      const c0 = parsed?.choices?.[0];
+      const delta = c0?.delta;
+      // OpenAI/OpenRouter streaming shapes can differ by provider
+      return (
+        (typeof delta?.content === "string" ? delta.content : "") ||
+        (typeof delta?.text === "string" ? delta.text : "") ||
+        (typeof c0?.message?.content === "string" ? c0.message.content : "")
+      );
+    };
 
     const processLine = (line) => {
       const trimmed = line.trim();
@@ -405,7 +434,7 @@ window.askAI = async () => {
       if (data === "[DONE]" || !data) return;
       try {
         const parsed = JSON.parse(data);
-        const content = parsed?.choices?.[0]?.delta?.content;
+        const content = extractDeltaText(parsed);
         if (content && typeof content === "string" && content.length > 0) {
           full += content;
           if (!started) {
@@ -416,7 +445,9 @@ window.askAI = async () => {
           }
           const bubble = document.getElementById(lId);
           if (bubble) {
-            bubble.innerHTML = formatAssistantMessage(full, { streaming: true });
+            bubble.innerHTML = formatAssistantMessage(full, {
+              streaming: true,
+            });
             box.scrollTop = box.scrollHeight;
           }
         }
@@ -447,10 +478,27 @@ window.askAI = async () => {
       buffer.split("\n").forEach(processLine);
     }
 
+    // If streaming didn't produce content, try read as JSON (non-stream response)
+    if (!full || full.trim().length < 2) {
+      try {
+        const fallbackText = await res.clone().text();
+        // If it was JSON, try to extract message content
+        try {
+          const j = JSON.parse(fallbackText);
+          const content = j?.choices?.[0]?.message?.content;
+          if (typeof content === "string" && content.trim()) full = content;
+        } catch (_) {
+          // Not JSON, use raw text if meaningful
+          if (fallbackText && fallbackText.trim().length > 10)
+            full = fallbackText;
+        }
+      } catch (_) {}
+    }
+
     // Fallback: response terlalu pendek/terpotong
     if (!full || full.trim().length < 15) {
       full =
-        "Waduh maaf Rek, kayaknya jawaban gue ke-cut atau koneksi lagi gangguan nih. Coba kirim lagi pertanyaan lu ya, gue bakal jawab yang lengkap dan bener. Pastiin koneksi lu stabil juga biar streaming-nya lancar! 😹";
+        "Waduh maaf Rek, kayaknya jawaban gue ke-cut atau koneksi lagi gangguan nih. Coba kirim lagi pertanyaan lu ya.";
       const tm = document.getElementById("typing-msg-" + lId);
       if (tm) {
         if (!started)
@@ -531,12 +579,12 @@ window.openAuth = (m) => {
   const modal = document.getElementById("authModal");
   if (!modal) return;
   modal.style.display = "flex";
-  
+
   // Trigger reflow for animations
   const formContainer = modal.querySelector(".auth-form-container");
   if (formContainer) {
     formContainer.classList.remove("animate");
-    void formContainer.offsetWidth; 
+    void formContainer.offsetWidth;
     formContainer.classList.add("animate");
   }
 
@@ -1149,14 +1197,17 @@ window.applyCrop = function () {
 
   /* ── Helper: Ambil antrean putar saat ini (Semua vs Favorit) ── */
   function getCurrentQueue() {
-    return isPlayingFavorites ? playlist.filter((t) => isFavTrack(t)) : playlist;
+    return isPlayingFavorites
+      ? playlist.filter((t) => isFavTrack(t))
+      : playlist;
   }
   let audioCtx = null,
     analyser = null,
     sourceConnected = false;
   let currentMobileTab = null;
   let lastTabTouchAt = 0;
-  const isMobileViewport = () => window.matchMedia("(max-width: 768px)").matches;
+  const isMobileViewport = () =>
+    window.matchMedia("(max-width: 768px)").matches;
 
   const audio = new Audio();
   audio.volume = parseFloat(localStorage.getItem("ngawi-vol") || "0.8");
@@ -1261,17 +1312,20 @@ window.applyCrop = function () {
     const cleanName = (s) => {
       if (!s) return "";
       return s
-        .replace(/^\d+[\s.-]*/, "") 
-        .replace(/\(.*\)|\[.*\]/g, "") 
-        .replace(/feat\..*|ft\..*/i, "") 
-        .replace(/\.mp3|\.m4a|\.wav|\.flac/i, "") 
+        .replace(/^\d+[\s.-]*/, "")
+        .replace(/\(.*\)|\[.*\]/g, "")
+        .replace(/feat\..*|ft\..*/i, "")
+        .replace(/\.mp3|\.m4a|\.wav|\.flac/i, "")
         .trim();
     };
 
     const tryiTunes = async (q) => {
       if (!q || q.length < 2) return null;
       try {
-        const query = q.replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
+        const query = q
+          .replace(/[^\w\s-]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
         const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`;
         const res = await fetch(url);
         const data = await res.json();
@@ -1295,14 +1349,16 @@ window.applyCrop = function () {
         const data = await res.json();
         const content = JSON.parse(data.contents);
         if (content.data && content.data.length > 0) {
-          return content.data[0].album.cover_xl || content.data[0].album.cover_big;
+          return (
+            content.data[0].album.cover_xl || content.data[0].album.cover_big
+          );
         }
       } catch (_) {}
       return null;
     };
 
     const fullClean = cleanName(trackName);
-    
+
     // Step 1: Try iTunes with full name
     let cover = await tryiTunes(fullClean);
     if (cover) return cover;
@@ -1315,11 +1371,11 @@ window.applyCrop = function () {
     if (trackName.includes(" - ")) {
       const parts = trackName.split(" - ");
       const title = cleanName(parts[1]);
-      
+
       cover = await tryiTunes(title);
       if (!cover) cover = await tryDeezer(title);
     }
-    
+
     return cover;
   }
 
@@ -1328,16 +1384,17 @@ window.applyCrop = function () {
     const albumEl = document.getElementById("albumArt");
     currentAlbumCoverUrl = coverUrl || null;
     if (!albumEl) return;
-    
+
     // Ensure emoji span exists
     let emojiEl = albumEl.querySelector(".album-art-emoji");
     if (!emojiEl) {
       const textNodes = Array.from(albumEl.childNodes).filter(
         (n) => n.nodeType === 3 && n.textContent.trim(),
       );
-      const emojiText = textNodes.length > 0 ? textNodes[0].textContent.trim() : "🎵";
+      const emojiText =
+        textNodes.length > 0 ? textNodes[0].textContent.trim() : "🎵";
       if (textNodes.length > 0) textNodes[0].remove();
-      
+
       emojiEl = document.createElement("span");
       emojiEl.className = "album-art-emoji";
       emojiEl.textContent = emojiText;
@@ -1345,8 +1402,8 @@ window.applyCrop = function () {
     }
 
     // Remove all existing imgs
-    albumEl.querySelectorAll(".album-art-img").forEach(img => img.remove());
-    
+    albumEl.querySelectorAll(".album-art-img").forEach((img) => img.remove());
+
     if (!coverUrl) {
       emojiEl.style.opacity = "1";
       _updateSideMiniInfo();
@@ -1361,7 +1418,7 @@ window.applyCrop = function () {
       emojiEl.style.opacity = "0";
       // Ensure the URL matches current track after load
       if (currentAlbumCoverUrl === coverUrl) {
-          _updateSideMiniInfo();
+        _updateSideMiniInfo();
       }
     };
     img.onerror = () => {
@@ -1399,7 +1456,8 @@ window.applyCrop = function () {
       });
     });
     const lastTrack = parseInt(localStorage.getItem("ngawi-track") || "-1");
-    const wasPlayingFavs = localStorage.getItem("ngawi-playing-favs") === "true";
+    const wasPlayingFavs =
+      localStorage.getItem("ngawi-playing-favs") === "true";
     scheduleRenderPlaylist();
     if (lastTrack >= 0 && lastTrack < playlist.length)
       loadTrack(lastTrack, false, wasPlayingFavs);
@@ -1414,7 +1472,10 @@ window.applyCrop = function () {
 
   function resizeCanvas() {
     if (!canvas) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, isMobileViewport() ? 1.5 : 2);
+    const dpr = Math.min(
+      window.devicePixelRatio || 1,
+      isMobileViewport() ? 1.5 : 2,
+    );
     canvas.width = Math.floor(canvas.offsetWidth * dpr);
     canvas.height = Math.floor(canvas.offsetHeight * dpr);
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1554,7 +1615,8 @@ window.applyCrop = function () {
     lastActiveLine = -1;
     setAlbumCover(null);
     fetchAlbumCover(track.name).then((coverUrl) => {
-      if (currentTrack === idx && isPlayingFavorites === fromFavs) setAlbumCover(coverUrl);
+      if (currentTrack === idx && isPlayingFavorites === fromFavs)
+        setAlbumCover(coverUrl);
     });
     _updateSideMiniInfo();
     syncLikeBtn();
@@ -1641,7 +1703,7 @@ window.applyCrop = function () {
         ? Math.floor(Math.random() * queue.length)
         : (currentTrack + 1) % queue.length,
       true,
-      isPlayingFavorites
+      isPlayingFavorites,
     );
   };
   window.prevTrack = function () {
@@ -1654,7 +1716,7 @@ window.applyCrop = function () {
     window.loadTrack(
       (currentTrack - 1 + queue.length) % queue.length,
       true,
-      isPlayingFavorites
+      isPlayingFavorites,
     );
   };
   window.shuffleTrack = function () {
@@ -1682,7 +1744,7 @@ window.applyCrop = function () {
     if (!slider) return;
     const pct = Math.max(0, Math.min(100, ratio * 100));
     const isLight = document.body.getAttribute("data-theme") === "light";
-    
+
     if (isLight) {
       // Warna aksen untuk mode terang agar kontras
       slider.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--accent-dim) ${pct}%, var(--accent-dim) 100%)`;
@@ -1745,16 +1807,21 @@ window.applyCrop = function () {
   };
 
   window.toggleFavFromListObject = function (idOrName) {
-    const track = playlist.find((t) => t.id === idOrName || t.name === idOrName);
+    const track = playlist.find(
+      (t) => t.id === idOrName || t.name === idOrName,
+    );
     if (!track) return;
     const isLiked = isFavTrack(track);
     setFavTrack(track, !isLiked);
-    
+
     // Sinkronisasi jika track ini sedang diputar
     const queue = getCurrentQueue();
     const playingTrack = queue[currentTrack];
-    if (playingTrack && (playingTrack.id === track.id || playingTrack.name === track.name)) {
-        syncLikeBtn();
+    if (
+      playingTrack &&
+      (playingTrack.id === track.id || playingTrack.name === track.name)
+    ) {
+      syncLikeBtn();
     }
 
     _lastRenderedPlaylistLength = -1;
@@ -1796,11 +1863,11 @@ window.applyCrop = function () {
     URL.revokeObjectURL(track.url);
     removeTrackFromDB(track.id);
     playlist.splice(idx, 1);
-    
+
     if (isPlayingFavorites) {
-        // Jika sedang putar favorit, kembalikan ke mode semua lagu jika ada perubahan drastis
-        // atau tetap di mode favorit tapi reset indeks
-        isPlayingFavorites = false; 
+      // Jika sedang putar favorit, kembalikan ke mode semua lagu jika ada perubahan drastis
+      // atau tetap di mode favorit tapi reset indeks
+      isPlayingFavorites = false;
     }
 
     if (currentTrack === idx) {
@@ -1851,10 +1918,9 @@ window.applyCrop = function () {
     }
     const isPlaying = !audio.paused;
     container.innerHTML = playlist
-      .map(
-        (t, i) => {
-          const isActive = !isPlayingFavorites && i === currentTrack;
-          return `
+      .map((t, i) => {
+        const isActive = !isPlayingFavorites && i === currentTrack;
+        return `
       <div class="playlist-item ${isActive ? "active" : ""}" onclick="window.loadTrack(${i}, true, false)">
         <div class="playlist-item-num">${isActive && isPlaying ? "▶" : i + 1}</div>
         <div class="playlist-item-info">
@@ -1868,8 +1934,7 @@ window.applyCrop = function () {
           <span class="material-symbols-rounded">close</span>
         </button>
       </div>`;
-        },
-      )
+      })
       .join("");
   }
 
@@ -1938,7 +2003,8 @@ window.applyCrop = function () {
         ct.textContent = formatTime(audio.currentTime);
       }
     }
-    if (tt && durationLabel !== lastRenderedDurationLabel) tt.textContent = durationLabel;
+    if (tt && durationLabel !== lastRenderedDurationLabel)
+      tt.textContent = durationLabel;
     lastRenderedCurrentSecond = currentSecond;
     lastRenderedDurationLabel = durationLabel;
     if (syncedLines.length > 0) {
@@ -1998,7 +2064,9 @@ window.applyCrop = function () {
         const pe = window.getComputedStyle(container).pointerEvents;
         if (pe === "none") return;
         const targetTop =
-          activeLine.offsetTop - container.clientHeight / 2 + activeLine.clientHeight / 2;
+          activeLine.offsetTop -
+          container.clientHeight / 2 +
+          activeLine.clientHeight / 2;
         container.scrollTo({
           top: Math.max(0, targetTop),
           behavior: isDesktop ? "smooth" : "auto",
@@ -2064,8 +2132,11 @@ window.applyCrop = function () {
   document.addEventListener("keydown", (e) => {
     // Pastikan user tidak sedang mengetik di input chat atau textarea
     const activeEl = document.activeElement;
-    const isInput = activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable;
-    
+    const isInput =
+      activeEl.tagName === "INPUT" ||
+      activeEl.tagName === "TEXTAREA" ||
+      activeEl.isContentEditable;
+
     if (e.code === "Space" && !isInput) {
       e.preventDefault(); // Cegah scroll halaman saat tekan spasi
       window.togglePlay();
@@ -2076,7 +2147,11 @@ window.applyCrop = function () {
     const queue = getCurrentQueue();
     if (!isRepeat) {
       if (isShuffle)
-        window.loadTrack(Math.floor(Math.random() * queue.length), true, isPlayingFavorites);
+        window.loadTrack(
+          Math.floor(Math.random() * queue.length),
+          true,
+          isPlayingFavorites,
+        );
       else if (currentTrack < queue.length - 1) window.nextTrack();
       else {
         updatePlayerUI(false);
