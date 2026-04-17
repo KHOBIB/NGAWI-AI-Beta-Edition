@@ -98,14 +98,7 @@
         >
           <span class="material-symbols-rounded">light_mode</span>
         </button>
-        <button
-          class="icon-btn desktop-only"
-          onclick="window.openGame()"
-          title="Mini Game"
-          id="gameBtn"
-        >
-          <span class="material-symbols-rounded">sports_esports</span>
-        </button>
+
         <button
           class="icon-btn desktop-only"
           onclick="window.clearChat()"
@@ -120,6 +113,14 @@
           title="Music Player"
         >
           <span class="material-symbols-rounded">music_note</span>
+        </button>
+        <button
+          class="icon-btn desktop-only"
+          onclick="window.openPersonality()"
+          title="Sifat AI"
+          id="personalityBtn"
+        >
+          <span class="material-symbols-rounded">psychology</span>
         </button>
         <div id="profileTrigger">
           <button class="icon-btn" onclick="window.toggleSidebar()">
@@ -173,7 +174,22 @@
 
     <!-- ═══ INPUT ═══ -->
     <div class="bottom">
+      <div id="imagePreviewArea" class="image-preview-area"></div>
       <div class="input-wrap" id="inputWrap">
+        <button
+          class="attach-btn"
+          onclick="document.getElementById('aiImageInput').click()"
+          title="Lampirkan Gambar"
+        >
+          <span class="material-symbols-rounded">image</span>
+        </button>
+        <input
+          type="file"
+          id="aiImageInput"
+          accept="image/*"
+          style="display: none"
+          onchange="window.handleAIImageSelect(this.files)"
+        />
         <div class="input-ph" id="inputPh">Tanya NGAWI AI</div>
         <textarea
           id="uIn"
@@ -319,17 +335,20 @@
           <span class="material-symbols-rounded">volume_up</span>
         </div>
 
-        <!-- Mobile-only tab bar -->
+        <!-- Mobile-only tab bar (Telegram Style) -->
         <div class="yt-tabs-bar mobile-tabs-bar">
           <button
-            class="yt-tab-btn"
+            class="yt-tab-btn active"
             id="tabQueueBtn"
             onclick="
               event.stopPropagation();
               window.switchMusicTab('queue');
             "
           >
-            Berikutnya
+            <div class="tab-icon-wrap">
+              <span class="material-symbols-rounded">list</span>
+            </div>
+            <span>Berikutnya</span>
           </button>
           <button
             class="yt-tab-btn"
@@ -339,7 +358,10 @@
               window.switchMusicTab('lyrics');
             "
           >
-            Lirik
+            <div class="tab-icon-wrap">
+              <span class="material-symbols-rounded">lyrics</span>
+            </div>
+            <span>Lirik</span>
           </button>
           <button
             class="yt-tab-btn"
@@ -349,7 +371,10 @@
               window.switchMusicTab('favs');
             "
           >
-            Favorit
+            <div class="tab-icon-wrap">
+              <span class="material-symbols-rounded">favorite</span>
+            </div>
+            <span>Favorit</span>
           </button>
         </div>
       </div>
@@ -463,8 +488,8 @@
             <div id="favsContainer">
               <div class="playlist-empty">
                 <span class="playlist-empty-icon">💜</span>
-                Belum ada lagu favorit nih Rek!<br />Pencet tombol ❤️ di lagu yang
-                disuka dulu
+                Belum ada lagu favorit nih Rek!<br />Pencet tombol ❤️ di lagu
+                yang disuka dulu
               </div>
             </div>
           </div>
@@ -483,56 +508,6 @@
       style="display: none"
       onchange="window.addMusicFiles(this.files)"
     />
-
-    <!-- ═══ MINI GAME MODAL ═══ -->
-    <div id="gameModal" class="modal">
-      <div class="modal-box game-modal-box">
-        <div class="game-header">
-          <div class="game-title">⚔️ PIXEL DASH</div>
-          <button class="icon-btn game-close-btn" onclick="window.closeGame()">
-            <span class="material-symbols-rounded">close</span>
-          </button>
-        </div>
-        <div class="game-score-row">
-          <div class="game-score-item">
-            <div class="game-score-label">SCORE</div>
-            <div class="game-score-val" id="gameScore">0</div>
-          </div>
-          <div class="game-score-item">
-            <div class="game-score-label">BEST</div>
-            <div class="game-score-val" id="gameBest">0</div>
-          </div>
-          <div class="game-score-item">
-            <div class="game-score-label">LIVES</div>
-            <div class="game-score-val" id="gameLives">❤️❤️❤️</div>
-          </div>
-        </div>
-        <div class="game-canvas-wrap">
-          <canvas id="gameCanvas"></canvas>
-          <div class="game-overlay" id="gameOverlay">
-            <div class="game-overlay-icon">🎮</div>
-            <div class="game-overlay-title" id="gameOverlayTitle">
-              PIXEL DASH
-            </div>
-            <div class="game-overlay-sub" id="gameOverlaySub">
-              Tekan SPACE atau TAP untuk mulai!
-            </div>
-            <button
-              class="game-start-btn"
-              id="gameStartBtn"
-              onclick="window.startGame()"
-            >
-              ▶ MULAI
-            </button>
-          </div>
-        </div>
-        <div class="game-controls-hint">
-          <span>⌨️ SPACE / ↑ = Lompat</span>
-          <span>📱 TAP = Lompat</span>
-          <span>🔄 Double Jump!</span>
-        </div>
-      </div>
-    </div>
 
     <!-- ═══ SIDEBAR ═══ -->
     <div id="sideOverlay" onclick="window.closeSidebar()"></div>
@@ -560,6 +535,13 @@
       <div class="side-menu">
         <div id="sideMenuGuest">
           <div
+            class="sidebar-item mobile-sidebar-item"
+            onclick="window.openPersonality()"
+          >
+            <span class="material-symbols-rounded">psychology</span
+            ><span>Sifat AI</span>
+          </div>
+          <div
             class="sidebar-item sidebar-login-btn"
             onclick="
               window.closeSidebar();
@@ -572,6 +554,13 @@
           <div class="sidebar-divider"></div>
         </div>
         <div id="sideMenuUser" style="display: none">
+          <div
+            class="sidebar-item mobile-sidebar-item"
+            onclick="window.openPersonality()"
+          >
+            <span class="material-symbols-rounded">psychology</span
+            ><span>Sifat AI</span>
+          </div>
           <div class="sidebar-item" onclick="window.openEditProfile()">
             <span class="material-symbols-rounded">manage_accounts</span
             ><span>Edit Profil</span>
@@ -593,16 +582,7 @@
             >light_mode</span
           ><span>Ganti Tema</span>
         </div>
-        <div
-          class="sidebar-item mobile-sidebar-item"
-          onclick="
-            window.openGame();
-            window.closeSidebar();
-          "
-        >
-          <span class="material-symbols-rounded">sports_esports</span
-          ><span>Mini Game</span>
-        </div>
+
         <div
           class="sidebar-item mobile-sidebar-item"
           onclick="
@@ -669,120 +649,121 @@
     <!-- ═══ AUTH MODAL ═══ -->
     <div id="authModal" class="modal">
       <div class="modal-box auth-modal-box">
-        <span class="modal-icon" id="authEmoji">🔐</span>
-        <div class="auth-steps" id="authSteps">
-          <div class="auth-step-dot active" id="step1"></div>
-          <div class="auth-step-dot" id="step2"></div>
-        </div>
-        <div class="modal-title" id="authTitle">Selamat Datang</div>
-        <p class="modal-sub" id="authSub">Masuk ke NGAWI AI buat lanjut rek</p>
-        <div id="regFields" class="field" style="display: none">
-          <label>Nama Lengkap</label>
-          <div class="field-inner">
-            <input
-              type="text"
-              id="regName"
-              placeholder="Nama lu"
-              autocomplete="off"
-              class="has-icon"
-            />
-            <span class="material-symbols-rounded field-icon">person</span>
-          </div>
-        </div>
-        <div class="field">
-          <label>Email</label>
-          <div class="field-inner">
-            <input
-              type="email"
-              id="authEmail"
-              placeholder="nama@email.com"
-              autocomplete="off"
-              class="has-icon"
-            />
-            <span class="material-symbols-rounded field-icon"
-              >alternate_email</span
-            >
-          </div>
-        </div>
-        <div class="field" id="pwField">
-          <label>Password</label>
-          <div class="pw-wrap">
-            <input
-              type="password"
-              id="authPass"
-              placeholder="••••••••"
-              autocomplete="new-password"
-              oninput="checkPwStrength(this.value)"
-            />
-            <span
-              class="material-symbols-rounded eye-btn"
-              id="eyeIcon"
-              onclick="window.togglePW()"
-              role="button"
-              >visibility_off</span
-            >
-          </div>
-          <div class="pw-strength-wrap" id="pwStrengthWrap">
-            <div class="pw-strength-bar">
-              <div class="pw-strength-fill" id="pwStrengthFill"></div>
+        <div class="auth-visual-bg"></div>
+        <div class="auth-header">
+          <div class="auth-brand">
+            <span class="modal-icon" id="authEmoji">🔐</span>
+            <div class="auth-steps" id="authSteps">
+              <div class="auth-step-dot active" id="step1"></div>
+              <div class="auth-step-dot" id="step2"></div>
             </div>
-            <div class="pw-strength-label" id="pwStrengthLabel"></div>
           </div>
+          <h2 class="modal-title" id="authTitle">Selamat Datang</h2>
+          <p class="modal-sub" id="authSub">
+            Masuk ke NGAWI AI buat lanjut rek
+          </p>
         </div>
-        <div style="text-align: right; margin: -6px 0 14px" id="forgotWrap">
-          <span
-            id="forgotLink"
-            style="font-size: 12px; color: var(--text2); cursor: pointer"
-            onclick="window.viewReset()"
-            >Lupa password?</span
+
+        <div class="auth-form-container">
+          <div id="regFields" class="field" style="display: none">
+            <label>Nama Lengkap</label>
+            <div class="field-inner">
+              <input
+                type="text"
+                id="regName"
+                placeholder="Nama lu"
+                autocomplete="off"
+                class="has-icon"
+              />
+              <span class="material-symbols-rounded field-icon">person</span>
+            </div>
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <div class="field-inner">
+              <input
+                type="email"
+                id="authEmail"
+                placeholder="nama@email.com"
+                autocomplete="off"
+                class="has-icon"
+              />
+              <span class="material-symbols-rounded field-icon"
+                >alternate_email</span
+              >
+            </div>
+          </div>
+          <div class="field" id="pwField">
+            <label>Password</label>
+            <div class="pw-wrap">
+              <input
+                type="password"
+                id="authPass"
+                placeholder="••••••••"
+                autocomplete="new-password"
+                oninput="checkPwStrength(this.value)"
+              />
+              <span
+                class="material-symbols-rounded eye-btn"
+                id="eyeIcon"
+                onclick="window.togglePW()"
+                role="button"
+                >visibility_off</span
+              >
+            </div>
+            <div class="pw-strength-wrap" id="pwStrengthWrap">
+              <div class="pw-strength-bar">
+                <div class="pw-strength-fill" id="pwStrengthFill"></div>
+              </div>
+              <div class="pw-strength-label" id="pwStrengthLabel"></div>
+            </div>
+          </div>
+          <div style="text-align: right; margin: -6px 0 14px" id="forgotWrap">
+            <span id="forgotLink" class="auth-link" onclick="window.viewReset()"
+              >Lupa password?</span
+            >
+          </div>
+          <button
+            id="mainAuthBtn"
+            class="btn-primary auth-submit"
+            onclick="window.processAuth()"
           >
+            <div class="spin"></div>
+            <span class="btn-text" id="btnLabel">Masuk Sekarang</span>
+            <span class="material-symbols-rounded btn-arrow"
+              >arrow_forward</span
+            >
+          </button>
+
+          <div class="divider"><span>atau lanjut dengan</span></div>
+
+          <button
+            id="googleAuthBtn"
+            class="btn-google"
+            onclick="window.loginGoogle()"
+          >
+            <img
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              width="18"
+            />
+            <span>Google Account</span>
+          </button>
         </div>
-        <button
-          id="mainAuthBtn"
-          class="btn-primary"
-          onclick="window.processAuth()"
-        >
-          <div class="spin"></div>
-          <span class="btn-text" id="btnLabel">Masuk Sekarang</span>
-        </button>
-        <button
-          id="googleAuthBtn"
-          class="btn-google"
-          onclick="window.loginGoogle()"
-        >
-          <img
-            src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-            width="17"
-          />
-          <span>Lanjut Pake Google</span>
-        </button>
-        <div class="divider">atau</div>
-        <p style="font-size: 13px; color: var(--text2); margin-top: 6px">
-          <span id="switchText">Belum punya akun?</span>
-          <span
-            id="switchBtn"
-            onclick="window.switchAuth()"
-            style="
-              color: var(--accent);
-              cursor: pointer;
-              font-weight: 700;
-              margin-left: 4px;
-            "
-            >Daftar Dulu</span
-          >
-        </p>
-        <p
-          onclick="window.closeModal()"
-          style="
-            font-size: 11.5px;
-            color: var(--text2);
-            opacity: 0.45;
-            cursor: pointer;
-            margin-top: 16px;
-          "
-        >
-          Gk jadi deh
-        </p>
+
+        <div class="auth-footer">
+          <p>
+            <span id="switchText">Belum punya akun?</span>
+            <span
+              id="switchBtn"
+              onclick="window.switchAuth()"
+              class="auth-switch-link"
+              >Daftar Dulu</span
+            >
+          </p>
+          <p onclick="window.closeModal()" class="auth-close-link">
+            Gk jadi deh
+          </p>
+        </div>
       </div>
     </div>
 
@@ -909,6 +890,129 @@
             <span class="btn-text">✅ Terapkan</span>
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- ═══ PERSONALITY MODAL ═══ -->
+    <div id="personalityModal" class="modal">
+      <div class="modal-box personality-modal-box">
+        <span class="modal-icon">🧠</span>
+        <div class="modal-title">Pilih Sifat AI</div>
+        <p class="modal-sub">Ubah cara <b>NGAWI AI</b> ngobrol sama lu</p>
+        <div class="personality-grid" id="pGrid">
+          <div
+            class="p-card"
+            id="p-teman"
+            onclick="window.setPersonality('teman')"
+          >
+            <div class="p-icon-wrap">
+              <div class="p-icon">🤜🤛</div>
+            </div>
+            <div class="p-info">
+              <div class="p-name">Temen Ngopi</div>
+              <div class="p-desc">
+                Asik, usil, & kritis. Pake bahasa Bekasi gaul!
+              </div>
+            </div>
+            <div class="p-active-indicator">
+              <span class="material-symbols-rounded">check_circle</span>
+            </div>
+          </div>
+          <div
+            class="p-card"
+            id="p-guru"
+            onclick="window.setPersonality('guru')"
+          >
+            <div class="p-icon-wrap">
+              <div class="p-icon">< / ></div>
+            </div>
+            <div class="p-info">
+              <div class="p-name">Guru Ngoding</div>
+              <div class="p-desc">
+                Bijak & sabar. Jelasin konsep coding pake analogi gampang.
+              </div>
+            </div>
+            <div class="p-active-indicator">
+              <span class="material-symbols-rounded">check_circle</span>
+            </div>
+          </div>
+          <div
+            class="p-card"
+            id="p-coding_buddy"
+            onclick="window.setPersonality('coding_buddy')"
+          >
+            <div class="p-icon-wrap">
+              <div class="p-icon">♨️</div>
+            </div>
+            <div class="p-info">
+              <div class="p-name">Temen Ngoding</div>
+              <div class="p-desc">
+                Partner sejati buat nge-debug & curhat soal kode.
+              </div>
+            </div>
+            <div class="p-active-indicator">
+              <span class="material-symbols-rounded">check_circle</span>
+            </div>
+          </div>
+          <div
+            class="p-card"
+            id="p-romantis_cewe"
+            onclick="window.setPersonality('romantis_cewe')"
+          >
+            <div class="p-icon-wrap">
+              <div class="p-icon">🌸</div>
+            </div>
+            <div class="p-info">
+              <div class="p-name">My Bini</div>
+              <div class="p-desc">
+                Perhatian, lembut, & romantis. Mood booster harianmu.
+              </div>
+            </div>
+            <div class="p-active-indicator">
+              <span class="material-symbols-rounded">check_circle</span>
+            </div>
+          </div>
+          <div
+            class="p-card"
+            id="p-romantis_cowo"
+            onclick="window.setPersonality('romantis_cowo')"
+          >
+            <div class="p-icon-wrap">
+              <div class="p-icon">🌹</div>
+            </div>
+            <div class="p-info">
+              <div class="p-name">My Suami</div>
+              <div class="p-desc">
+                Protektif, gentleman, & manis. Siap nemenin kamu terus.
+              </div>
+            </div>
+            <div class="p-active-indicator">
+              <span class="material-symbols-rounded">check_circle</span>
+            </div>
+          </div>
+        </div>
+        <button
+          class="btn-ghost"
+          onclick="window.closePersonality()"
+          style="margin-top: 24px; width: 100%"
+        >
+          Tutup
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ IMAGE VIEWER MODAL ═══ -->
+    <div
+      id="imageViewerModal"
+      class="modal"
+      onclick="window.closeImageViewer()"
+      style="z-index: 5000; background: rgba(0, 0, 0, 0.9)"
+    >
+      <button class="viewer-close" onclick="window.closeImageViewer()">
+        <span class="material-symbols-rounded">close</span>
+      </button>
+      <div class="viewer-content" onclick="event.stopPropagation()">
+        <img id="viewerImg" src="" alt="View Image" />
       </div>
     </div>
 

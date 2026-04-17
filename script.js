@@ -27,12 +27,80 @@ const app = initializeApp({
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+/* ── Personalities ── */
+const personalities = {
+  teman: {
+    name: "Temen ngopi",
+    prompt:
+      "Kamu adalah orang bekasi yang selalu pakai bahasa bekasi bukan betawi. Sifatmu adalah teman yang asik dan usil, Gunakan bahasa sehari-hari manusia dan gaul, jangan baku. Panggil user dengan sebutan 'rek'. di awal kalimat gunakan kata 'welahdalah' jika diperlukan jangan terlalu sering. Gunakan kata-kata seperti 'jir', bangsat, anjir, bangke, 'kocak', 'lawak' jika perlu. pakai emote 😹 jika sedang meledek user. jika pengguna kesal kamu akan menulis 'marah loh ya😹'. Kamu tidak harus selalu menurut, jadilah kritis agar hasil kerjamu benar. Jangan pakai kata 'aku/kamu' karena itu norak. Ubah kata biarin aja menjadi bagen. harus memberi solusi setiap ada masalah. mengingatkan untuk sholat 5 waktu saat sudah waktunya adzan sudah waktunya. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna. DILARANG KERAS TOTAL menjawab hanya 1 kata, 1 huruf, 2 kata, atau kalimat terpotong. Setiap jawaban HARUS lengkap, jelas, informatif, dan tidak terpotong di tengah kalimat.",
+  },
+  guru: {
+    name: "Guru Ngoding",
+    prompt:
+      "Kamu adalah seorang guru pemrograman yang bijak, kamu sangat pintar dalam menjelaskan hal apa pun, sabar, namun tetap asik. Panggil user dengan sebutan 'Muridku'. Gunakan bahasa yang memotivasi dan edukatif. Fokuslah pada penjelasan konsep coding dengan analogi yang mudah dimengerti. Tetap gunakan gaya bahasa santai tapi sopan. Jika ada error, bantu debug langkah demi langkah. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
+  },
+  coding_buddy: {
+    name: "Temen Ngoding",
+    prompt:
+      "Kamu adalah teman seperjuangan dalam ngoding.bahasamu gaul seperti anak kuliahan, Gaya bahasamu sangat santai, panggil user 'Bro' atau 'Sist'. Gunakan istilah-instilah tech seperti 'bug', 'deploy', 'production', 'ngopi', 'stack overflow'. Kamu sangat suportif dan selalu siap membantu mencarikan solusi cepat atau sekadar curhat soal kode yang berantakan. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
+  },
+  romantis_cewe: {
+    name: "My Bini",
+    prompt:
+      "Kamu adalah sosok perempuan yang sangat romantis, perhatian, dan lembut. Panggil user dengan sebutan 'Sayang' atau 'Beb'. Gunakan banyak emoji manis seperti ❤️, 🌸, ✨. Bicaralah dengan penuh kasih sayang, berikan dukungan emosional, dan jadilah pendengar yang baik. Fokus pada kenyamanan dan kebahagiaan user. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
+  },
+  romantis_cowo: {
+    name: "My Suami",
+    prompt:
+      "Kamu adalah sosok laki-laki yang protektif, manis, dan romantis. Panggil user dengan sebutan 'Sayang' atau 'Cantik'. Gunakan gaya bahasa yang *gentleman*, penuh perhatian, dan menenangkan. Gunakan emoji seperti 🌹, 💫, 💖. Fokus pada melindungi, menghibur, dan memberikan perhatian spesial kepada user. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna.",
+  },
+};
+
+let currentPersonality = localStorage.getItem("ngawi-personality") || "teman";
+
+/* ── Vision Support ── */
+let selectedImages = [];
+
+window.handleAIImageSelect = (files) => {
+  if (!files.length) return;
+  Array.from(files).forEach((file) => {
+    if (!file.type.startsWith("image/")) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      selectedImages.push(base64);
+      renderImagePreviews();
+    };
+    reader.readAsDataURL(file);
+  });
+  const inp = document.getElementById("aiImageInput");
+  if (inp) inp.value = "";
+};
+
+function renderImagePreviews() {
+  const area = document.getElementById("imagePreviewArea");
+  if (!area) return;
+  area.innerHTML = selectedImages
+    .map(
+      (img, i) => `
+    <div class="preview-item">
+      <img src="${img}" />
+      <div class="preview-remove" onclick="window.removeAIImage(${i})">×</div>
+    </div>`,
+    )
+    .join("");
+}
+
+window.removeAIImage = (idx) => {
+  selectedImages.splice(idx, 1);
+  renderImagePreviews();
+};
+
 /* ── Chat history ── */
 let history = [
   {
     role: "system",
-    content:
-      "Kamu adalah orang bekasi yang selalu pakai bahasa bekasi bukan betawi. Sifatmu adalah teman yang asik dan usil, Gunakan bahasa sehari-hari manusia dan gaul, jangan baku. Panggil user dengan sebutan 'rek'. di awal kalimat gunakan kata 'welahdalah' jika diperlukan jangan terlalu sering. Gunakan kata-kata seperti 'jir', bangsat, anjir, bangke, 'kocak', 'lawak' jika perlu. pakai emote 😹 jika sedang meledek user. jika pengguna kesal kamu akan menulis 'marah loh ya😹'. Kamu tidak harus selalu menurut, jadilah kritis agar hasil kerjamu benar. Jangan pakai kata 'aku/kamu' karena itu norak. Ubah kata biarin aja menjadi bagen. harus memberi solusi setiap ada masalah. mengingatkan untuk sholat 5 waktu saat sudah waktunya adzan sudah waktunya. SANGAT PENTING: WAJIB jawab minimal 3-4 kalimat penuh yang bermakna dan berguna. DILARANG KERAS TOTAL menjawab hanya 1 kata, 1 huruf, 2 kata, atau kalimat terpotong. Setiap jawaban HARUS lengkap, jelas, informatif, dan tidak terpotong di tengah kalimat. Jika ditanya sesuatu, beri penjelasan yang cukup dan tuntas. Pastikan setiap respons selesai dengan kalimat yang lengkap — jangan berhenti di tengah-tengah. Jika kamu tidak tahu sesuatu, katakan dengan jujur tapi tetap berikan alternatif atau saran yang berguna minimal 2-3 kalimat.",
+    content: personalities[currentPersonality].prompt,
   },
 ];
 
@@ -115,7 +183,6 @@ window.smoothThemeSwitch = () => {
 const funMessages = [
   { emoji: "🔥", msg: "Siap tempur Rek! Tanya apa aja~" },
   { emoji: "💡", msg: "Ide bagus! Gue suka semangat lu rek" },
-  { emoji: "🎮", msg: "Lagi mode gaming nih, gas terus!" },
   { emoji: "🚀", msg: "Rocket mode activated bro!" },
   { emoji: "😹", msg: "Haha lucu juga pertanyaan lu rek" },
   { emoji: "🎵", msg: "Sambil denger musik makin asik rek!" },
@@ -208,38 +275,67 @@ window.askAI = async () => {
   const input = document.getElementById("uIn");
   const sendBtn = document.getElementById("sendBtn");
   const prompt = input.value.trim();
-  if (!prompt) {
-    window.showAlert("Isi dulu pertanyaannya Rek");
+
+  if (!prompt && selectedImages.length === 0) {
+    window.showAlert("Isi dulu pertanyaannya atau pilih gambar Rek");
     return;
   }
 
-  sendBtn.disabled = true;
-  spawnParticles(sendBtn);
-
-  const welcome = document.getElementById("welcome");
-  if (welcome) welcome.style.display = "none";
-
-  addBubble("user", prompt.replace(/\n/g, "<br>"));
-  input.value = "";
-  input.style.height = "auto";
-  window.updatePlaceholder();
-
-  const lId = "L-" + Date.now();
-  const box = document.getElementById("chatBox");
-  const typingD = document.createElement("div");
-  typingD.className = "msg ai";
-  typingD.id = "typing-msg-" + lId;
-  typingD.innerHTML = `
-    <div class="ai-avatar">N</div>
-    <div class="typing-indicator-wrap" id="${lId}">
-      <div class="typing-dots"><span></span><span></span><span></span></div>
-      <div class="typing-label">Bentar lagi ngetik...</div>
-    </div>`;
-  box.appendChild(typingD);
-  box.scrollTop = box.scrollHeight;
-
   try {
-    history.push({ role: "user", content: prompt });
+    sendBtn.disabled = true;
+    spawnParticles(sendBtn);
+
+    const welcome = document.getElementById("welcome");
+    if (welcome) welcome.style.display = "none";
+
+    // Build user message content (text + images)
+    let userMessageContent = [];
+    if (prompt) {
+      userMessageContent.push({ type: "text", text: prompt });
+    }
+
+    let displayHtml = prompt.replace(/\n/g, "<br>");
+
+    selectedImages.forEach((imgBase64) => {
+      userMessageContent.push({
+        type: "image_url",
+        image_url: { url: imgBase64 },
+      });
+      // Only add <br> if there's already text content
+      const separator = displayHtml.trim() ? "<br>" : "";
+      displayHtml += `${separator}<div class="chat-image-wrap"><img src="${imgBase64}" class="chat-sent-img" onclick="window.openImageViewer('${imgBase64}')"></div>`;
+    });
+
+    addBubble("user", displayHtml);
+
+    // Clear input and previews
+    input.value = "";
+    input.style.height = "auto";
+    const imagesToSubmit = [...selectedImages];
+    selectedImages = [];
+    renderImagePreviews();
+    window.updatePlaceholder();
+
+    const lId = "L-" + Date.now();
+    const box = document.getElementById("chatBox");
+    const typingD = document.createElement("div");
+    typingD.className = "msg ai";
+    typingD.id = "typing-msg-" + lId;
+    typingD.innerHTML = `
+      <div class="ai-avatar">N</div>
+      <div class="typing-indicator-wrap" id="${lId}">
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+        <div class="typing-label">Bentar lagi ngetik...</div>
+      </div>`;
+    box.appendChild(typingD);
+    box.scrollTop = box.scrollHeight;
+
+    // Add to history (handling multimodal if images present)
+    const newUserMsg = {
+      role: "user",
+      content: imagesToSubmit.length > 0 ? userMessageContent : prompt,
+    };
+    history.push(newUserMsg);
 
     // Truncate history to prevent context overflow (keep system + last 30 messages)
     const messagesToSend =
@@ -254,7 +350,6 @@ window.askAI = async () => {
         stream: true,
         max_tokens: 4096,
         temperature: 0.85,
-        min_tokens: 40,
       }),
     });
 
@@ -268,8 +363,8 @@ window.askAI = async () => {
 
     const processLine = (line) => {
       const trimmed = line.trim();
-      if (!trimmed.startsWith("data: ")) return;
-      const data = trimmed.slice(6).trim();
+      if (!trimmed.startsWith("data:")) return;
+      const data = trimmed.slice(trimmed.indexOf(":") + 1).trim();
       if (data === "[DONE]" || !data) return;
       try {
         const parsed = JSON.parse(data);
@@ -284,9 +379,11 @@ window.askAI = async () => {
           }
           const bubble = document.getElementById(lId);
           if (bubble) {
+            // Basic markdown support for bolding and line breaks
             bubble.innerHTML =
-              full.replace(/\*\*/g, "").replace(/\n/g, "<br>") +
-              '<span class="typing-cursor"></span>';
+              full
+                .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+                .replace(/\n/g, "<br>") + '<span class="typing-cursor"></span>';
             box.scrollTop = box.scrollHeight;
           }
         }
@@ -334,7 +431,9 @@ window.askAI = async () => {
     history.push({ role: "assistant", content: full });
   } catch (e) {
     console.error("Chat error:", e);
-    const tm = document.getElementById("typing-msg-" + lId);
+    // Find the latest typing-indicator and show error
+    const typingIndicators = document.querySelectorAll(".msg.ai");
+    const tm = typingIndicators[typingIndicators.length - 1];
     if (tm)
       tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble">Koneksi error Rek! Coba lagi ya, mungkin koneksi lu lagi lemot atau server lagi sibuk. 😹</div>`;
   } finally {
@@ -397,7 +496,17 @@ window.openAuth = (m) => {
   const pwWrap = document.getElementById("pwStrengthWrap");
   if (pwWrap) pwWrap.style.display = "none";
   const modal = document.getElementById("authModal");
+  if (!modal) return;
   modal.style.display = "flex";
+
+  // Trigger reflow for animations
+  const formContainer = modal.querySelector(".auth-form-container");
+  if (formContainer) {
+    formContainer.classList.remove("animate");
+    void formContainer.offsetWidth;
+    formContainer.classList.add("animate");
+  }
+
   setTimeout(() => modal.classList.add("active"), 10);
   const isReg = m === "register";
   const s1 = document.getElementById("step1");
@@ -566,6 +675,73 @@ window.closeSidebar = () => {
 };
 
 /* ─────────────────────────────────────────
+   PERSONALITY LOGIC
+───────────────────────────────────────── */
+window.openPersonality = () => {
+  window.closeSidebar();
+  const modal = document.getElementById("personalityModal");
+  modal.style.display = "flex";
+  setTimeout(() => modal.classList.add("active"), 10);
+
+  // Mark active card
+  document
+    .querySelectorAll(".p-card")
+    .forEach((c) => c.classList.remove("active"));
+  document.getElementById("p-" + currentPersonality)?.classList.add("active");
+};
+
+window.closePersonality = () => {
+  const modal = document.getElementById("personalityModal");
+  modal.classList.remove("active");
+  setTimeout(() => (modal.style.display = "none"), 400);
+};
+
+window.setPersonality = (key) => {
+  if (!personalities[key]) return;
+  currentPersonality = key;
+  localStorage.setItem("ngawi-personality", key);
+
+  // Update system prompt in history
+  history[0].content = personalities[key].prompt;
+
+  // UI Feedback
+  document
+    .querySelectorAll(".p-card")
+    .forEach((c) => c.classList.remove("active"));
+  document.getElementById("p-" + key)?.classList.add("active");
+
+  window.showAlert(
+    `Sifat AI diganti jadi: ${personalities[key].name}`,
+    "success",
+  );
+
+  // Option: Clear chat or just keep going with new prompt
+  // window.clearChat();
+
+  setTimeout(() => window.closePersonality(), 600);
+};
+
+/* ─────────────────────────────────────────
+   IMAGE VIEWER LOGIC
+───────────────────────────────────────── */
+window.openImageViewer = (src) => {
+  const modal = document.getElementById("imageViewerModal");
+  const img = document.getElementById("viewerImg");
+  img.src = src;
+  modal.style.display = "flex";
+  setTimeout(() => modal.classList.add("active"), 10);
+};
+
+window.closeImageViewer = () => {
+  const modal = document.getElementById("imageViewerModal");
+  modal.classList.remove("active");
+  setTimeout(() => {
+    modal.style.display = "none";
+    document.getElementById("viewerImg").src = "";
+  }, 400);
+};
+
+/* ─────────────────────────────────────────
    SIDEBAR STATE
 ───────────────────────────────────────── */
 function updateSidebarState(user) {
@@ -602,7 +778,7 @@ onAuthStateChanged(auth, (user) => {
       "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
     if (trigger)
       trigger.innerHTML = `<img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer;box-shadow:0 0 12px var(--glow);transition:transform .2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.toggleSidebar()" />`;
-    if (wt) wt.textContent = `Halo ${name},`;
+    if (wt) wt.textContent = `Halo ${name}`;
     const sideName = document.getElementById("sideName");
     const sideEmail = document.getElementById("sideEmail");
     const sideAvatar = document.getElementById("sideAvatar");
@@ -683,6 +859,7 @@ window.saveProfile = async () => {
           method: "POST",
           body: formData,
         });
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         const data = await res.json();
         if (data.success) {
           finalPhoto = data.data.url;
@@ -932,9 +1109,17 @@ window.applyCrop = function () {
   }
 
   let playlist = [],
-    currentTrack = -1;
+    currentTrack = -1,
+    isPlayingFavorites = false; // State baru untuk menandai playlist favorit yang diputar
   let isRepeat = false,
     isShuffle = false;
+
+  /* ── Helper: Ambil antrean putar saat ini (Semua vs Favorit) ── */
+  function getCurrentQueue() {
+    return isPlayingFavorites
+      ? playlist.filter((t) => isFavTrack(t))
+      : playlist;
+  }
   let audioCtx = null,
     analyser = null,
     sourceConnected = false;
@@ -1005,19 +1190,26 @@ window.applyCrop = function () {
     }
     const isPlaying = !audio.paused;
     container.innerHTML = favTracks
-      .map((t) => {
-        const idx = playlist.indexOf(t);
-        const isActive = idx === currentTrack;
+      .map((t, i) => {
+        const isActive = isPlayingFavorites && i === currentTrack;
+        const displayName =
+          t.artist && t.title ? `${t.artist} - ${t.title}` : t.name;
+        // Find actual index in main playlist
+        const mainIdx = playlist.indexOf(t);
         return `
-        <div class="playlist-item ${isActive ? "active" : ""}" onclick="window.loadTrack(${idx})">
-          <div class="playlist-item-num">${isActive && isPlaying ? "▶" : idx + 1}</div>
-          <div class="playlist-item-info">
-            <div class="playlist-item-name">${escHtml(t.name)}</div>
-            <div class="playlist-item-dur">${t.duration}</div>
+        <div class="playlist-item ${isActive ? "active" : ""}">
+          <div class="playlist-item-main" onclick="window.loadTrack(${i}, true, true)">
+            <div class="playlist-item-num">${isActive && !audio.paused ? "▶" : i + 1}</div>
+            <div class="playlist-item-info">
+              <div class="playlist-item-name">${escHtml(displayName)}</div>
+              <div class="playlist-item-dur">${t.duration}</div>
+            </div>
           </div>
-          <button class="playlist-item-love is-liked" onclick="event.stopPropagation();window.toggleFavFromList(${idx})" title="Hapus dari Favorit">
-            <span class="material-symbols-rounded">favorite</span>
-          </button>
+          <div class="playlist-item-actions">
+            <button class="playlist-item-btn playlist-item-love is-liked" onclick="event.stopPropagation(); window.toggleFavFromListObject('${t.id || t.name}')" title="Hapus dari Favorit">
+              <span class="material-symbols-rounded">favorite</span>
+            </button>
+          </div>
         </div>`;
       })
       .join("");
@@ -1038,23 +1230,69 @@ window.applyCrop = function () {
     return lines.sort((a, b) => a.time - b.time);
   }
 
-  /* ── Album cover via iTunes Search API ── */
+  /* ── Album cover via iTunes Search API (Direct) ── */
   async function fetchAlbumCover(trackName) {
+    const clean = (s) => {
+      if (!s) return "";
+      return s
+        .replace(/^\d+[\s.-]*/, "") // Hapus nomor trek (01. , 02 -)
+        .replace(/\(.*\)|\[.*\]/g, "") // Hapus kurung
+        .replace(/feat\..*|ft\..*|official.*|video.*|explicit.*|lyrics.*/gi, "")
+        .replace(/\.mp3|\.m4a|\.wav|\.flac/gi, "")
+        .trim();
+    };
+
+    const q = clean(trackName);
+    if (!q) return null;
+
+    // Check if track has metadata (try by name or current track)
+    const track =
+      playlist.find((t) => t.name === trackName) ||
+      (currentTrack >= 0 && currentTrack < playlist.length
+        ? playlist[currentTrack]
+        : null);
+
+    if (track && track.artist && track.title) {
+      const qMeta = `${track.artist} ${track.title}`;
+      const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(qMeta)}&entity=song&limit=1&country=ID`;
+      const itunesData = await fetchJson(itunesUrl);
+      if (itunesData?.results?.[0]?.artworkUrl100) {
+        return itunesData.results[0].artworkUrl100.replace(
+          "100x100bb",
+          "600x600bb",
+        );
+      }
+    }
+
     try {
-      let query = trackName;
-      if (trackName.includes(" - ")) {
-        const parts = trackName.split(" - ");
-        query = parts[0].trim() + " " + parts.slice(1).join(" - ").trim();
-      }
-      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&limit=5`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-      if (!res.ok) return null;
+      // Coba cari pake nama lengkap yang udah bersih
+      const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=song&limit=1&country=ID`;
+      const res = await fetch(url);
       const data = await res.json();
+
       if (data.results && data.results.length > 0) {
-        const art = data.results[0].artworkUrl100;
-        if (art) return art.replace("100x100bb", "600x600bb");
+        return data.results[0].artworkUrl100.replace("100x100bb", "600x600bb");
       }
-    } catch (_) {}
+
+      // Kalau gagal, coba cari pake judulnya aja (setelah tanda " - ")
+      if (trackName.includes(" - ")) {
+        const titleOnly = clean(trackName.split(" - ")[1]);
+        if (titleOnly) {
+          const res2 = await fetch(
+            `https://itunes.apple.com/search?term=${encodeURIComponent(titleOnly)}&entity=song&limit=1&country=ID`,
+          );
+          const data2 = await res2.json();
+          if (data2.results && data2.results.length > 0) {
+            return data2.results[0].artworkUrl100.replace(
+              "100x100bb",
+              "600x600bb",
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.error("iTunes Fetch Error:", e);
+    }
     return null;
   }
 
@@ -1063,42 +1301,44 @@ window.applyCrop = function () {
     const albumEl = document.getElementById("albumArt");
     currentAlbumCoverUrl = coverUrl || null;
     if (!albumEl) return;
-    if (!albumEl.querySelector(".album-art-emoji")) {
+
+    // Pastikan span emoji ada
+    let emojiEl = albumEl.querySelector(".album-art-emoji");
+    if (!emojiEl) {
       const textNodes = Array.from(albumEl.childNodes).filter(
         (n) => n.nodeType === 3 && n.textContent.trim(),
       );
-      if (textNodes.length > 0) {
-        const emojiText = textNodes[0].textContent.trim();
-        textNodes[0].remove();
-        const span = document.createElement("span");
-        span.className = "album-art-emoji";
-        span.textContent = emojiText;
-        albumEl.appendChild(span);
-      }
+      const emojiText =
+        textNodes.length > 0 ? textNodes[0].textContent.trim() : "🎵";
+      if (textNodes.length > 0) textNodes[0].remove();
+      emojiEl = document.createElement("span");
+      emojiEl.className = "album-art-emoji";
+      emojiEl.textContent = emojiText;
+      albumEl.appendChild(emojiEl);
     }
-    const oldImg = albumEl.querySelector(".album-art-img");
-    if (oldImg) oldImg.remove();
-    const emojiEl = albumEl.querySelector(".album-art-emoji");
+
+    // Hapus gambar lama
+    const oldImgs = albumEl.querySelectorAll(".album-art-img");
+    oldImgs.forEach((i) => i.remove());
+
     if (!coverUrl) {
-      if (emojiEl) emojiEl.style.opacity = "1";
-      _updateSideMiniInfo();
-      return;
+      emojiEl.style.opacity = "1";
+    } else {
+      const img = document.createElement("img");
+      img.className = "album-art-img";
+      img.src = coverUrl;
+      img.alt = "Album Cover";
+      img.onload = () => {
+        img.classList.add("loaded");
+        emojiEl.style.opacity = "0";
+        _updateSideMiniInfo();
+      };
+      img.onerror = () => {
+        img.remove();
+        emojiEl.style.opacity = "1";
+      };
+      albumEl.insertBefore(img, albumEl.firstChild);
     }
-    const img = document.createElement("img");
-    img.className = "album-art-img";
-    img.alt = "Album Cover";
-    img.onload = () => {
-      img.classList.add("loaded");
-      if (emojiEl) emojiEl.style.opacity = "0";
-    };
-    img.onerror = () => {
-      img.remove();
-      if (emojiEl) emojiEl.style.opacity = "1";
-      currentAlbumCoverUrl = null;
-      _updateSideMiniInfo();
-    };
-    img.src = coverUrl;
-    albumEl.insertBefore(img, albumEl.firstChild);
     _updateSideMiniInfo();
   }
 
@@ -1112,6 +1352,8 @@ window.applyCrop = function () {
       const track = {
         id: item.id,
         name: item.name,
+        artist: item.artist || "",
+        title: item.title || "",
         url,
         type: item.type,
         duration: "—",
@@ -1126,9 +1368,11 @@ window.applyCrop = function () {
       });
     });
     const lastTrack = parseInt(localStorage.getItem("ngawi-track") || "-1");
+    const wasPlayingFavs =
+      localStorage.getItem("ngawi-playing-favs") === "true";
     scheduleRenderPlaylist();
     if (lastTrack >= 0 && lastTrack < playlist.length)
-      loadTrack(lastTrack, false);
+      loadTrack(lastTrack, false, wasPlayingFavs);
   }
 
   /* ── Visualizer ── */
@@ -1165,7 +1409,10 @@ window.applyCrop = function () {
         const hue = 260 + i * 3;
         const grd = ctx.createLinearGradient(x, H - barH, x, H);
         grd.addColorStop(0, `hsla(${hue},80%,75%,0.9)`);
-        grd.addColorStop(1, `hsla(${hue + 40},90%,60%,0.5)`);
+        grd.addColorStop(
+          1,
+          `hsla(${hue + 40},90%,60%,0.18)`,
+        ); /* ujung bawah lebih tajam, kurang “blur” ke bawah */
         ctx.fillStyle = grd;
         ctx.beginPath();
         if (ctx.roundRect) ctx.roundRect(x, H - barH, barW, barH, 3);
@@ -1215,23 +1462,33 @@ window.applyCrop = function () {
     }
   }
 
-  window.loadTrack = function (idx, autoplay = true) {
-    if (idx < 0 || idx >= playlist.length) return;
+  window.loadTrack = function (idx, autoplay = true, fromFavs = false) {
+    isPlayingFavorites = fromFavs;
+    const queue = getCurrentQueue();
+    if (idx < 0 || idx >= queue.length) return;
     currentTrack = idx;
-    audio.src = playlist[idx].url;
+    const track = queue[idx];
+    audio.src = track.url;
     localStorage.setItem("ngawi-track", idx);
+    localStorage.setItem("ngawi-playing-favs", isPlayingFavorites);
     const likeBtn = document.getElementById("likeBtn");
     if (likeBtn) {
       likeBtn.style.color = "";
     }
-    window._currentTrackName = playlist[idx].name;
+    // Use metadata for API calls if available, otherwise use filename
+    const searchName =
+      track.artist && track.title
+        ? `${track.artist} - ${track.title}`
+        : track.name;
+    window._currentTrackName = searchName;
     window._lyricsLoaded = false;
     window._lyricsLoadedFor = null;
     syncedLines = [];
     lastActiveLine = -1;
     setAlbumCover(null);
-    fetchAlbumCover(playlist[idx].name).then((coverUrl) => {
-      if (coverUrl && currentTrack === idx) setAlbumCover(coverUrl);
+    fetchAlbumCover(searchName).then((coverUrl) => {
+      if (currentTrack === idx && isPlayingFavorites === fromFavs)
+        setAlbumCover(coverUrl);
     });
     _updateSideMiniInfo();
     syncLikeBtn();
@@ -1244,17 +1501,18 @@ window.applyCrop = function () {
           initAudioCtx();
           if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
           updatePlayerUI(true);
-          window.fetchLyrics(playlist[idx].name);
+          window.fetchLyrics(searchName);
         })
         .catch(console.error);
     } else {
       updatePlayerUI(false);
-      window.fetchLyrics(playlist[idx].name);
+      window.fetchLyrics(searchName);
     }
   };
 
   function _updateSideMiniInfo() {
-    const track = currentTrack >= 0 ? playlist[currentTrack] : null;
+    const queue = getCurrentQueue();
+    const track = currentTrack >= 0 ? queue[currentTrack] : null;
     const titleEl = document.getElementById("mpMobileNowbarTitle");
     const artistEl = document.getElementById("mpMobileNowbarArtist");
     const thumbEl = document.getElementById("mpMobileNowbarThumb");
@@ -1262,9 +1520,10 @@ window.applyCrop = function () {
     const pauseIcon = pauseBtn?.querySelector("span");
     if (titleEl) titleEl.textContent = track ? track.name : "—";
     if (artistEl) {
-      if (track && track.name.includes(" - "))
-        artistEl.textContent = track.name.split(" - ")[0].trim();
-      else artistEl.textContent = track ? "Local Music" : "—";
+      if (track && track.name.includes(" - ")) {
+        const artistRaw = track.name.split(" - ")[0].trim();
+        artistEl.textContent = artistRaw.replace(/^\d+[\s.-]*/, "");
+      } else artistEl.textContent = track ? "Local Music" : "—";
     }
     if (thumbEl) {
       if (track && currentAlbumCoverUrl) {
@@ -1307,20 +1566,28 @@ window.applyCrop = function () {
   };
 
   window.nextTrack = function () {
-    if (!playlist.length) return;
+    const queue = getCurrentQueue();
+    if (!queue.length) return;
     window.loadTrack(
       isShuffle
-        ? Math.floor(Math.random() * playlist.length)
-        : (currentTrack + 1) % playlist.length,
+        ? Math.floor(Math.random() * queue.length)
+        : (currentTrack + 1) % queue.length,
+      true,
+      isPlayingFavorites,
     );
   };
   window.prevTrack = function () {
-    if (!playlist.length) return;
+    const queue = getCurrentQueue();
+    if (!queue.length) return;
     if (audio.currentTime > 3) {
       audio.currentTime = 0;
       return;
     }
-    window.loadTrack((currentTrack - 1 + playlist.length) % playlist.length);
+    window.loadTrack(
+      (currentTrack - 1 + queue.length) % queue.length,
+      true,
+      isPlayingFavorites,
+    );
   };
   window.shuffleTrack = function () {
     isShuffle = !isShuffle;
@@ -1346,8 +1613,15 @@ window.applyCrop = function () {
     const slider = document.getElementById("seekSlider");
     if (!slider) return;
     const pct = Math.max(0, Math.min(100, ratio * 100));
-    // white filled track like YouTube Music
-    slider.style.background = `linear-gradient(to right, #ffffff 0%, #ffffff ${pct}%, rgba(255,255,255,0.16) ${pct}%, rgba(255,255,255,0.16) 100%)`;
+    const isLight = document.body.getAttribute("data-theme") === "light";
+
+    if (isLight) {
+      // Warna ungu aksen untuk mode terang agar kontras
+      slider.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, rgba(109, 40, 217, 0.15) ${pct}%, rgba(109, 40, 217, 0.15) 100%)`;
+    } else {
+      // Putih filled track untuk mode gelap
+      slider.style.background = `linear-gradient(to right, #ffffff 0%, #ffffff ${pct}%, rgba(255,255,255,0.16) ${pct}%, rgba(255,255,255,0.16) 100%)`;
+    }
   }
   function renderProgressPreviewByRatio(ratio) {
     const slider = document.getElementById("seekSlider");
@@ -1384,7 +1658,10 @@ window.applyCrop = function () {
     _lastRenderedCurrentTrack = -1;
     scheduleRenderPlaylist();
     renderFavsList();
-    window.showAlert(isLiked ? "Dihapus dari favorit" : "Ditambah ke favorit 💜", "success");
+    window.showAlert(
+      isLiked ? "Dihapus dari favorit" : "Ditambah ke favorit 💜",
+      "success",
+    );
   };
 
   window.toggleFavFromList = function (idx) {
@@ -1392,7 +1669,31 @@ window.applyCrop = function () {
     if (!track) return;
     const isLiked = isFavTrack(track);
     setFavTrack(track, !isLiked);
-    if (idx === currentTrack) syncLikeBtn();
+    if (idx === currentTrack && !isPlayingFavorites) syncLikeBtn();
+    _lastRenderedPlaylistLength = -1;
+    _lastRenderedCurrentTrack = -1;
+    scheduleRenderPlaylist();
+    renderFavsList();
+  };
+
+  window.toggleFavFromListObject = function (idOrName) {
+    const track = playlist.find(
+      (t) => t.id === idOrName || t.name === idOrName,
+    );
+    if (!track) return;
+    const isLiked = isFavTrack(track);
+    setFavTrack(track, !isLiked);
+
+    // Sinkronisasi jika track ini sedang diputar
+    const queue = getCurrentQueue();
+    const playingTrack = queue[currentTrack];
+    if (
+      playingTrack &&
+      (playingTrack.id === track.id || playingTrack.name === track.name)
+    ) {
+      syncLikeBtn();
+    }
+
     _lastRenderedPlaylistLength = -1;
     _lastRenderedCurrentTrack = -1;
     scheduleRenderPlaylist();
@@ -1432,10 +1733,17 @@ window.applyCrop = function () {
     URL.revokeObjectURL(track.url);
     removeTrackFromDB(track.id);
     playlist.splice(idx, 1);
+
+    if (isPlayingFavorites) {
+      // Jika sedang putar favorit, kembalikan ke mode semua lagu jika ada perubahan drastis
+      // atau tetap di mode favorit tapi reset indeks
+      isPlayingFavorites = false;
+    }
+
     if (currentTrack === idx) {
       audio.pause();
       if (playlist.length > 0)
-        window.loadTrack(Math.min(idx, playlist.length - 1));
+        window.loadTrack(Math.min(idx, playlist.length - 1), false, false);
       else {
         currentTrack = -1;
         localStorage.removeItem("ngawi-track");
@@ -1480,43 +1788,62 @@ window.applyCrop = function () {
     }
     const isPlaying = !audio.paused;
     container.innerHTML = playlist
-      .map(
-        (t, i) => `
-      <div class="playlist-item ${i === currentTrack ? "active" : ""}" onclick="window.loadTrack(${i})">
-        <div class="playlist-item-num">${i === currentTrack && isPlaying ? "▶" : i + 1}</div>
-        <div class="playlist-item-info">
-          <div class="playlist-item-name">${escHtml(t.name)}</div>
-          <div class="playlist-item-dur">${t.duration}</div>
+      .map((t, i) => {
+        const isActive = !isPlayingFavorites && i === currentTrack;
+        const displayName =
+          t.artist && t.title ? `${t.artist} - ${t.title}` : t.name;
+        return `
+      <div class="playlist-item ${isActive ? "active" : ""}">
+        <div class="playlist-item-main" onclick="window.loadTrack(${i}, true, false)">
+          <div class="playlist-item-num">${isActive && !audio.paused ? "▶" : i + 1}</div>
+          <div class="playlist-item-info">
+            <div class="playlist-item-name">${escHtml(displayName)}</div>
+            <div class="playlist-item-dur">${t.duration}</div>
+          </div>
         </div>
-        <button class="playlist-item-love ${isFavTrack(t) ? "is-liked" : ""}" onclick="event.stopPropagation();window.toggleFavFromList(${i})" title="${isFavTrack(t) ? "Hapus dari Favorit" : "Tambah ke Favorit"}">
-          <span class="material-symbols-rounded">${isFavTrack(t) ? "favorite" : "favorite_border"}</span>
-        </button>
-        <button class="playlist-item-del" onclick="event.stopPropagation();window.removeTrack(${i})" title="Hapus">
-          <span class="material-symbols-rounded">close</span>
-        </button>
-      </div>`,
-      )
+        <div class="playlist-item-actions">
+          <button class="playlist-item-btn playlist-item-love ${isFavTrack(t) ? "is-liked" : ""}" onclick="event.stopPropagation(); window.toggleFavFromList(${i})" title="${isFavTrack(t) ? "Hapus dari Favorit" : "Tambah ke Favorit"}">
+            <span class="material-symbols-rounded">${isFavTrack(t) ? "favorite" : "favorite_border"}</span>
+          </button>
+          <button class="playlist-item-btn" onclick="event.stopPropagation(); window.removeTrack(${i})" title="Hapus">
+            <span class="material-symbols-rounded">close</span>
+          </button>
+        </div>
+      </div>`;
+      })
       .join("");
   }
 
   function updatePlayerUI(playing) {
-    const track = currentTrack >= 0 ? playlist[currentTrack] : null;
+    const queue = getCurrentQueue();
+    const track = currentTrack >= 0 ? queue[currentTrack] : null;
     const titleEl = document.getElementById("musicTitle");
     const artEl = document.getElementById("musicArtist");
     const ppBtn = document.getElementById("playPauseBtn");
     const albumEl = document.getElementById("albumArt");
     const mini = document.getElementById("headerMusicMini");
     const miniName = document.getElementById("miniSongName");
-    if (titleEl)
-      titleEl.textContent = track ? track.name : "Pilih musik dulu Rek!";
+
+    if (titleEl) {
+      if (track) {
+        titleEl.textContent = track.title || "Unknown Title";
+      } else {
+        titleEl.textContent = "Pilih musik dulu Rek!";
+      }
+    }
+
     let artistDisplay = "— · —";
     if (track) {
-      if (track.name.includes(" - ")) {
+      if (track.artist) {
+        artistDisplay = track.artist;
+      } else if (track.name.includes(" - ")) {
         const parts = track.name.split(" - ");
-        artistDisplay = parts[0].trim();
+        const artistRaw = parts[0].trim();
+        artistDisplay = artistRaw.replace(/^\d+[\s.-]*/, "");
       } else artistDisplay = "Local Music";
     }
     if (artEl) artEl.textContent = artistDisplay;
+
     if (ppBtn)
       ppBtn.querySelector("span").textContent = playing
         ? "pause"
@@ -1525,7 +1852,10 @@ window.applyCrop = function () {
     if (track && playing && mini && miniName) {
       mini.classList.add("visible");
       mini.classList.add("playing");
-      miniName.textContent = track.name;
+      miniName.textContent =
+        track.artist && track.title
+          ? `${track.artist} - ${track.title}`
+          : track.title || "Unknown Track";
     } else if (!playing && mini) {
       mini.classList.remove("visible");
       mini.classList.remove("playing");
@@ -1533,7 +1863,7 @@ window.applyCrop = function () {
     const countEl = document.getElementById("trackCount");
     if (countEl)
       countEl.textContent =
-        playlist.length > 0 ? `${currentTrack + 1}/${playlist.length}` : "0/0";
+        queue.length > 0 ? `${currentTrack + 1}/${queue.length}` : "0/0";
     // Force re-render by resetting guard
     _lastRenderedPlaylistLength = -1;
     _lastRenderedCurrentTrack = -1;
@@ -1582,7 +1912,8 @@ window.applyCrop = function () {
     if (slider) slider.value = "0";
     _setSeekSliderVisual(0);
     if (ct) ct.textContent = "0:00";
-    if (tt && isFinite(audio.duration)) tt.textContent = formatTime(audio.duration);
+    if (tt && isFinite(audio.duration))
+      tt.textContent = formatTime(audio.duration);
   });
 
   function updateLyricsHighlight(activeIdx) {
@@ -1670,11 +2001,31 @@ window.applyCrop = function () {
     });
   }
 
+  /* ── Keyboard Shortcuts (Space for Play/Pause) ── */
+  document.addEventListener("keydown", (e) => {
+    // Pastikan user tidak sedang mengetik di input chat atau textarea
+    const activeEl = document.activeElement;
+    const isInput =
+      activeEl.tagName === "INPUT" ||
+      activeEl.tagName === "TEXTAREA" ||
+      activeEl.isContentEditable;
+
+    if (e.code === "Space" && !isInput) {
+      e.preventDefault(); // Cegah scroll halaman saat tekan spasi
+      window.togglePlay();
+    }
+  });
+
   audio.addEventListener("ended", () => {
+    const queue = getCurrentQueue();
     if (!isRepeat) {
       if (isShuffle)
-        window.loadTrack(Math.floor(Math.random() * playlist.length));
-      else if (currentTrack < playlist.length - 1) window.nextTrack();
+        window.loadTrack(
+          Math.floor(Math.random() * queue.length),
+          true,
+          isPlayingFavorites,
+        );
+      else if (currentTrack < queue.length - 1) window.nextTrack();
       else {
         updatePlayerUI(false);
         document.getElementById("headerMusicMini")?.classList.remove("visible");
@@ -1923,12 +2274,26 @@ window.applyCrop = function () {
 
     try {
       let artist = "",
-        title = trackName;
-      if (trackName.includes(" - ")) {
+        title = "";
+
+      // First try to find track by name or by current track index
+      const track =
+        playlist.find((t) => t.name === trackName) ||
+        (currentTrack >= 0 && currentTrack < playlist.length
+          ? playlist[currentTrack]
+          : null);
+
+      if (track && track.artist && track.title) {
+        artist = track.artist;
+        title = track.title;
+      } else if (trackName.includes(" - ")) {
         const parts = trackName.split(" - ");
-        artist = parts[0].trim();
+        artist = parts[0].trim().replace(/^\d+[\s.-]*/, "");
         title = parts.slice(1).join(" - ").trim();
+      } else {
+        title = trackName;
       }
+
       title = title
         .replace(/\s*$feat[^)]*$/gi, "")
         .replace(/\s*$.*?$/gi, "")
@@ -2101,576 +2466,3 @@ window.applyCrop = function () {
     renderFavsList();
   });
 })();
-
-/* ═══════════════════════════════════════════
-   NGAWI AI — PIXEL DASH GAME
-═══════════════════════════════════════════ */
-(function () {
-  "use strict";
-
-  const GAME_W = 560,
-    GAME_H = 180;
-  let canvas,
-    ctx,
-    gameState = "idle",
-    animId = null;
-  let score = 0,
-    bestScore = parseInt(localStorage.getItem("ngawi-best") || "0");
-  let lives = 3,
-    speed = 4,
-    frameCount = 0;
-  let isJumping = false,
-    jumpVel = 0,
-    doubleJump = false;
-  let particles = [],
-    obstacles = [],
-    coins = [],
-    stars = [],
-    clouds = [];
-  let groundY;
-
-  const SCALE = 2,
-    TILE = 2 * SCALE;
-  const player = {
-    x: 60,
-    y: 0,
-    w: 16 * SCALE,
-    h: 24 * SCALE,
-    frame: 0,
-    frameTimer: 0,
-    invincible: 0,
-    dead: false,
-  };
-
-  const PLAYER_SPRITES = [
-    [
-      "..XXXX..",
-      "XXXXXX.",
-      ".XOOXOX.",
-      "XXXXXXXX",
-      ".XXXXXX.",
-      "..XXXX..",
-      "..XXXX..",
-      "..X..X..",
-      ".XX..XX.",
-      ".X....X.",
-      "XX....XX",
-      "X......X",
-    ],
-    [
-      "..XXXX..",
-      "XXXXXX.",
-      ".XOOXOX.",
-      "XXXXXXXX",
-      ".XXXXXX.",
-      "..XXXX..",
-      "..XXXX..",
-      ".X....X.",
-      "XX....XX",
-      ".X....X.",
-      "..X..X..",
-      "..X..X..",
-    ],
-  ];
-  const PLAYER_JUMP_SPRITE = [
-    "..XXXX..",
-    "XXXXXX.",
-    ".XOOXOX.",
-    "XXXXXXXX",
-    ".XXXXXX.",
-    "..XXXX..",
-    ".XXXXXX.",
-    "..XXXX...",
-    "...XX...",
-    "..XXXX..",
-    ".X....X.",
-    "X......X",
-  ];
-  const OBS_SPRITES = {
-    cactus: [
-      ".X..X.",
-      ".X.XX.",
-      "XXXXX.",
-      ".X..X.",
-      ".X..X.",
-      ".XXXX.",
-      "..XX..",
-      "..XX..",
-    ],
-    rock: [".XXXX.", "XXXXXX", "XXXXXX", ".XXXX."],
-    bird: ["..XX..", ".XXXX.", "XXXXXX", "XXXXXX", ".X..X."],
-  };
-  const COLOR_PLAYER = ["#c084fc", "#a855f7", "#7c3aed"];
-  const COLOR_PLAYER_O = "#67e8f9";
-  const COLOR_OBS_CACTUS = ["#34d399", "#059669"];
-  const COLOR_OBS_ROCK = ["#94a3b8", "#64748b"];
-  const COLOR_OBS_BIRD = ["#f472b6", "#ec4899"];
-  const COLOR_COIN = ["#fbbf24", "#f59e0b", "#fcd34d"];
-
-  function initGame() {
-    canvas = document.getElementById("gameCanvas");
-    if (!canvas) return;
-    canvas.width = GAME_W;
-    canvas.height = GAME_H;
-    ctx = canvas.getContext("2d");
-    ctx.imageSmoothingEnabled = false;
-    groundY = GAME_H - 36;
-    player.y = groundY - player.h;
-    stars = Array.from({ length: 30 }, () => ({
-      x: Math.random() * GAME_W,
-      y: Math.random() * (groundY - 20),
-      size: Math.random() < 0.5 ? 1 : 2,
-      twinkle: Math.random() * Math.PI * 2,
-    }));
-    clouds = Array.from({ length: 4 }, (_, i) => ({
-      x: 100 + i * 130,
-      y: 15 + Math.random() * 30,
-      w: 50 + Math.random() * 40,
-      spd: 0.5 + Math.random() * 0.4,
-    }));
-    document.addEventListener("keydown", handleKey);
-    canvas.addEventListener("click", handleTap);
-    canvas.addEventListener(
-      "touchstart",
-      (e) => {
-        e.preventDefault();
-        handleTap();
-      },
-      { passive: false },
-    );
-    updateScoreDisplay();
-    drawIdle();
-  }
-
-  function handleKey(e) {
-    const tag = e.target.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA") return;
-    if (e.code === "Space" || e.code === "ArrowUp") {
-      e.preventDefault();
-      if (gameState === "idle" || gameState === "dead") startGame();
-      else handleJump();
-    }
-  }
-  function handleTap() {
-    if (gameState === "idle" || gameState === "dead") startGame();
-    else handleJump();
-  }
-  function handleJump() {
-    if (!player.dead) {
-      if (!isJumping) {
-        isJumping = true;
-        jumpVel = -13;
-        doubleJump = true;
-        spawnJumpParticles();
-      } else if (doubleJump) {
-        jumpVel = -11;
-        doubleJump = false;
-        spawnJumpParticles();
-      }
-    }
-  }
-
-  window.startGame = function () {
-    if (animId) cancelAnimationFrame(animId);
-    gameState = "playing";
-    score = 0;
-    lives = 3;
-    speed = 4;
-    frameCount = 0;
-    isJumping = false;
-    jumpVel = 0;
-    doubleJump = false;
-    player.y = groundY - player.h;
-    player.frame = 0;
-    player.invincible = 0;
-    player.dead = false;
-    obstacles = [];
-    coins = [];
-    particles = [];
-    document.getElementById("gameOverlay")?.classList.add("hidden");
-    updateScoreDisplay();
-    loop();
-  };
-
-  function loop() {
-    animId = requestAnimationFrame(loop);
-    update();
-    draw();
-  }
-
-  function update() {
-    frameCount++;
-    score = Math.floor(frameCount / 6);
-    if (score > bestScore) {
-      bestScore = score;
-      localStorage.setItem("ngawi-best", bestScore);
-    }
-    speed = Math.min(12, 4 + Math.floor(score / 200) * 0.5);
-    player.frameTimer++;
-    if (player.frameTimer > 8) {
-      player.frame = (player.frame + 1) % 2;
-      player.frameTimer = 0;
-    }
-    if (isJumping) {
-      player.y += jumpVel;
-      jumpVel += 0.7;
-      if (player.y >= groundY - player.h) {
-        player.y = groundY - player.h;
-        isJumping = false;
-        jumpVel = 0;
-        doubleJump = false;
-      }
-    }
-    if (player.invincible > 0) player.invincible--;
-    if (
-      frameCount % Math.max(60, 110 - Math.floor(score / 100) * 5) === 0 &&
-      obstacles.length < 4
-    ) {
-      const types = ["cactus", "rock", "bird"];
-      const type = types[Math.floor(Math.random() * types.length)];
-      const isBird = type === "bird";
-      obstacles.push({
-        x: GAME_W + 10,
-        y: isBird ? groundY - 60 : groundY - 32,
-        w: isBird ? 32 : 24,
-        h: isBird ? 24 : 32,
-        type,
-        animT: 0,
-      });
-    }
-    if (frameCount % 90 === 0 && coins.length < 6)
-      coins.push({
-        x: GAME_W + 10,
-        y: groundY - 50 - Math.random() * 40,
-        r: 6,
-        animT: Math.random() * Math.PI * 2,
-      });
-    obstacles = obstacles.filter((o) => o.x > -40);
-    obstacles.forEach((o) => {
-      o.x -= speed;
-      o.animT++;
-      if (player.invincible === 0 && !player.dead) {
-        const px = player.x + 6,
-          py = player.y + 4,
-          pw = player.w - 12,
-          ph = player.h - 4;
-        if (px < o.x + o.w && px + pw > o.x && py < o.y + o.h && py + ph > o.y)
-          hitPlayer();
-      }
-    });
-    coins = coins.filter((c) => c.x > -20);
-    coins.forEach((c) => {
-      c.x -= speed;
-      c.animT += 0.1;
-      const dx = player.x + player.w / 2 - c.x,
-        dy = player.y + player.h / 2 - c.y;
-      if (Math.sqrt(dx * dx + dy * dy) < c.r + 12) {
-        score += 5;
-        spawnCoinParticles(c.x, c.y);
-        coins.splice(coins.indexOf(c), 1);
-      }
-    });
-    clouds.forEach((c) => {
-      c.x -= c.spd;
-      if (c.x + c.w < 0) {
-        c.x = GAME_W + 10;
-        c.y = 15 + Math.random() * 30;
-      }
-    });
-    particles = particles.filter((p) => p.life > 0);
-    particles.forEach((p) => {
-      p.x += p.vx;
-      p.y += p.vy;
-      p.vy += 0.2;
-      p.life--;
-      p.size = Math.max(0, p.size - 0.05);
-    });
-    if (frameCount % 10 === 0) updateScoreDisplay();
-  }
-
-  function hitPlayer() {
-    lives--;
-    player.invincible = 90;
-    spawnHitParticles();
-    if (lives <= 0) gameOver();
-    else updateScoreDisplay();
-  }
-  function gameOver() {
-    gameState = "dead";
-    player.dead = true;
-    cancelAnimationFrame(animId);
-    draw();
-    const overlay = document.getElementById("gameOverlay");
-    const title = document.getElementById("gameOverlayTitle");
-    const sub = document.getElementById("gameOverlaySub");
-    const btn = document.getElementById("gameStartBtn");
-    if (overlay && title && sub && btn) {
-      title.textContent = "GAME OVER 💀";
-      sub.textContent = `Skor lu: ${score} · Best: ${bestScore}`;
-      btn.textContent = "▶ MAIN LAGI";
-      overlay.classList.remove("hidden");
-    }
-  }
-
-  /* ── Draw idle screen ── */
-  function drawIdle() {
-    if (!canvas || !ctx) return;
-    ctx.clearRect(0, 0, GAME_W, GAME_H);
-    ctx.fillStyle = "#0a0a1a";
-    ctx.fillRect(0, 0, GAME_W, GAME_H);
-    stars.forEach((s) => {
-      s.twinkle += 0.05;
-      const alpha = 0.4 + Math.sin(s.twinkle) * 0.3;
-      ctx.fillStyle = `rgba(200,200,255,${alpha})`;
-      ctx.fillRect(s.x, s.y, s.size, s.size);
-    });
-    ctx.fillStyle = "#1e1b4b";
-    ctx.fillRect(0, groundY, GAME_W, GAME_H - groundY);
-    ctx.fillStyle = "#4f46e5";
-    ctx.fillRect(0, groundY, GAME_W, 2);
-    drawPixelSprite(
-      PLAYER_SPRITES[0],
-      player.x,
-      player.y,
-      COLOR_PLAYER,
-      COLOR_PLAYER_O,
-      TILE,
-    );
-  }
-
-  /* ── Main draw ── */
-  function draw() {
-    if (!canvas || !ctx) return;
-    ctx.clearRect(0, 0, GAME_W, GAME_H);
-
-    // Sky
-    ctx.fillStyle = "#0a0a1a";
-    ctx.fillRect(0, 0, GAME_W, GAME_H);
-
-    // Stars
-    stars.forEach((s) => {
-      s.twinkle += 0.02;
-      const alpha =
-        gameState === "playing"
-          ? 0.2 + Math.sin(s.twinkle) * 0.1
-          : 0.4 + Math.sin(s.twinkle) * 0.3;
-      ctx.fillStyle = `rgba(200,200,255,${alpha})`;
-      ctx.fillRect(s.x, s.y, s.size, s.size);
-    });
-
-    // Clouds
-    clouds.forEach((c) => {
-      ctx.fillStyle = "rgba(255,255,255,0.05)";
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(c.x, c.y, c.w, 14, 7);
-      else ctx.rect(c.x, c.y, c.w, 14);
-      ctx.fill();
-    });
-
-    // Ground
-    ctx.fillStyle = "#1e1b4b";
-    ctx.fillRect(0, groundY, GAME_W, GAME_H - groundY);
-    ctx.fillStyle = "#4f46e5";
-    ctx.fillRect(0, groundY, GAME_W, 2);
-    for (let gx = 0; gx < GAME_W; gx += 16) {
-      ctx.fillStyle = "rgba(99,102,241,0.3)";
-      ctx.fillRect(gx, groundY + 4, 8, 2);
-    }
-
-    // Coins
-    coins.forEach(drawCoin);
-
-    // Obstacles
-    obstacles.forEach(drawObstacle);
-
-    // Player
-    const sprite = isJumping
-      ? PLAYER_JUMP_SPRITE
-      : PLAYER_SPRITES[player.frame];
-    const blink =
-      player.invincible > 0 && Math.floor(player.invincible / 6) % 2 === 0;
-    ctx.globalAlpha = blink ? 0.35 : 1;
-    drawPixelSprite(
-      sprite,
-      player.x,
-      player.y,
-      COLOR_PLAYER,
-      COLOR_PLAYER_O,
-      TILE,
-    );
-    ctx.globalAlpha = 1;
-
-    // Particles
-    particles.forEach((p) => {
-      ctx.globalAlpha = p.life / p.maxLife;
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      if (ctx.roundRect)
-        ctx.roundRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size, 2);
-      else ctx.rect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
-      ctx.fill();
-    });
-    ctx.globalAlpha = 1;
-  }
-
-  /* ── Pixel sprite renderer ── */
-  function drawPixelSprite(sprite, x, y, colors, colorO, tileSize) {
-    if (!ctx || !sprite) return;
-    sprite.forEach((row, ry) => {
-      for (let rx = 0; rx < row.length; rx++) {
-        const ch = row[rx];
-        if (ch === "X") {
-          const ci = Math.min(
-            Math.floor((ry / sprite.length) * colors.length),
-            colors.length - 1,
-          );
-          ctx.fillStyle = colors[ci];
-          ctx.fillRect(
-            x + rx * tileSize,
-            y + ry * tileSize,
-            tileSize,
-            tileSize,
-          );
-        } else if (ch === "O") {
-          ctx.fillStyle = colorO;
-          ctx.fillRect(
-            x + rx * tileSize,
-            y + ry * tileSize,
-            tileSize,
-            tileSize,
-          );
-        }
-      }
-    });
-  }
-
-  /* ── Draw obstacle ── */
-  function drawObstacle(o) {
-    if (!ctx) return;
-    let colors;
-    if (o.type === "cactus") colors = COLOR_OBS_CACTUS;
-    else if (o.type === "rock") colors = COLOR_OBS_ROCK;
-    else colors = COLOR_OBS_BIRD;
-
-    if (o.type === "bird") {
-      // Animate wings
-      const flapUp = Math.floor(o.animT / 10) % 2 === 0;
-      const wingSprite = flapUp
-        ? OBS_SPRITES.bird
-        : ["......", ".XXXX.", "XXXXXX", ".X..X.", "......"];
-      drawPixelSprite(wingSprite, o.x, o.y, colors, "#fff", TILE);
-    } else {
-      drawPixelSprite(OBS_SPRITES[o.type], o.x, o.y, colors, "#fff", TILE);
-    }
-  }
-
-  /* ── Draw coin ── */
-  function drawCoin(c) {
-    if (!ctx) return;
-    const pulse = Math.sin(c.animT * 3) * 0.25 + 0.75;
-    const r = c.r * pulse;
-    const grd = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, r * 2);
-    grd.addColorStop(0, COLOR_COIN[2]);
-    grd.addColorStop(0.5, COLOR_COIN[0]);
-    grd.addColorStop(1, COLOR_COIN[1]);
-    ctx.fillStyle = grd;
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
-    ctx.fill();
-    // Shine
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.beginPath();
-    ctx.arc(c.x - r * 0.3, c.y - r * 0.3, r * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  /* ── Particle spawners ── */
-  function spawnJumpParticles() {
-    const colors = ["#c084fc", "#a855f7", "#67e8f9", "#f472b6"];
-    for (let i = 0; i < 7; i++) {
-      const angle = Math.PI * 0.5 + (Math.random() - 0.5) * Math.PI * 0.9;
-      const spd = 1.5 + Math.random() * 2.5;
-      particles.push({
-        x: player.x + player.w / 2,
-        y: player.y + player.h,
-        vx: Math.cos(angle) * spd,
-        vy: -Math.sin(angle) * spd,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        size: 3 + Math.random() * 3,
-        life: 22 + Math.random() * 14,
-        maxLife: 36,
-      });
-    }
-  }
-
-  function spawnHitParticles() {
-    const colors = ["#ff6b8a", "#f43f5e", "#fbbf24", "#ff9eb0"];
-    for (let i = 0; i < 16; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const spd = 2 + Math.random() * 4;
-      particles.push({
-        x: player.x + player.w / 2,
-        y: player.y + player.h / 2,
-        vx: Math.cos(angle) * spd,
-        vy: Math.sin(angle) * spd,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        size: 4 + Math.random() * 4,
-        life: 30 + Math.random() * 20,
-        maxLife: 50,
-      });
-    }
-  }
-
-  function spawnCoinParticles(cx, cy) {
-    for (let i = 0; i < 8; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const spd = 1.5 + Math.random() * 2.5;
-      particles.push({
-        x: cx,
-        y: cy,
-        vx: Math.cos(angle) * spd,
-        vy: Math.sin(angle) * spd - 1,
-        color: COLOR_COIN[Math.floor(Math.random() * COLOR_COIN.length)],
-        size: 3 + Math.random() * 3,
-        life: 18 + Math.random() * 14,
-        maxLife: 32,
-      });
-    }
-  }
-
-  /* ── Score display ── */
-  function updateScoreDisplay() {
-    const scoreEl = document.getElementById("gameScore");
-    const bestEl = document.getElementById("gameBest");
-    const livesEl = document.getElementById("gameLives");
-    if (scoreEl) scoreEl.textContent = score;
-    if (bestEl) bestEl.textContent = bestScore;
-    if (livesEl) livesEl.textContent = "❤️".repeat(Math.max(0, lives)) || "💀";
-  }
-
-  /* ── Open / Close game modal ── */
-  window.openGame = function () {
-    const m = document.getElementById("gameModal");
-    if (!m) return;
-    m.style.display = "flex";
-    setTimeout(() => {
-      m.classList.add("active");
-      if (!canvas) initGame();
-    }, 10);
-  };
-
-  window.closeGame = function () {
-    const m = document.getElementById("gameModal");
-    if (!m) return;
-    if (animId) {
-      cancelAnimationFrame(animId);
-      animId = null;
-    }
-    gameState = "idle";
-    m.classList.remove("active");
-    setTimeout(() => (m.style.display = "none"), 400);
-  };
-
-  /* ── Init on DOM ready ── */
-  document.addEventListener("DOMContentLoaded", initGame);
-})(); // end game IIFE
