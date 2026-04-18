@@ -14,6 +14,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   sendPasswordResetEmail,
+  sendEmailVerification,
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const app = initializeApp({
@@ -132,6 +133,38 @@ window.showAlert = (msg, type = "error") => {
   a.className = `show ${type}`;
   clearTimeout(a._t);
   a._t = setTimeout(() => a.classList.remove("show"), 3400);
+};
+
+window.showCoolPopup = (title, message) => {
+  const old = document.getElementById("coolPopupOverlay");
+  if (old) old.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "coolPopupOverlay";
+  overlay.style.cssText =
+    "position:fixed;inset:0;background:rgba(5,8,20,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:6000;padding:18px;";
+  overlay.innerHTML = `
+    <div style="width:min(92vw,380px);background:linear-gradient(160deg,rgba(22,20,42,.95),rgba(14,15,30,.95));border:1px solid rgba(167,139,255,.45);box-shadow:0 20px 60px rgba(0,0,0,.45),0 0 30px rgba(167,139,255,.22);border-radius:20px;padding:18px 16px 14px;color:#fff;transform:translateY(8px) scale(.98);opacity:0;transition:all .2s ease;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <div style="width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#7c3aed,#06b6d4);font-size:20px;">📩</div>
+        <div style="font-weight:700;font-size:16px;line-height:1.2;">${escHtml(title)}</div>
+      </div>
+      <div style="font-size:13px;line-height:1.55;color:rgba(255,255,255,.86);padding:4px 2px 2px;">${escHtml(message)}</div>
+      <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+        <button id="coolPopupOkBtn" style="border:none;border-radius:11px;padding:9px 14px;font-weight:700;background:linear-gradient(135deg,#8b5cf6,#06b6d4);color:white;cursor:pointer;">Oke Sip</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const card = overlay.firstElementChild;
+  requestAnimationFrame(() => {
+    card.style.opacity = "1";
+    card.style.transform = "translateY(0) scale(1)";
+  });
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  overlay.querySelector("#coolPopupOkBtn")?.addEventListener("click", close);
 };
 
 window.autoResizeTA = (el) => {
@@ -635,12 +668,21 @@ window.processAuth = async () => {
     if (window.mode === "register") {
       if (!pass || pass.length < 6)
         return window.showAlert("Password minimal 6 karakter woyy");
-      await createUserWithEmailAndPassword(auth, email, pass);
-      await updateProfile(auth.currentUser, {
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, {
         displayName: document.getElementById("regName")?.value,
       });
+      try {
+        await sendEmailVerification(cred.user);
+      } catch (_) {
+        // keep register success even if verification email is delayed/rate-limited
+      }
       await signOut(auth);
-      window.showAlert("Daftar Berhasil", "success");
+      window.showCoolPopup(
+        "Pendaftaran Berhasil",
+        "Akun sudah jadi. Email verifikasi sudah dikirim, cek inbox atau folder spam ya Rek.",
+      );
+      window.showAlert("Daftar berhasil! Silakan login.", "success");
       window.openAuth("login");
     } else if (window.mode === "reset") {
       await sendPasswordResetEmail(auth, email);
@@ -661,6 +703,8 @@ window.processAuth = async () => {
       "auth/wrong-password": "Passwordnya salah woyy!",
       "auth/user-not-found": "Email belum kedaftar jir",
       "auth/invalid-email": "Format email salah coy",
+      "auth/too-many-requests":
+        "Kebanyakan percobaan login. Tunggu sebentar lalu coba lagi.",
     };
     window.showAlert(msgs[err.code] || "Gagal! Cek lagi data lu coba");
   } finally {
