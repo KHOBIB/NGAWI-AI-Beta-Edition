@@ -139,6 +139,13 @@ window.autoResizeTA = (el) => {
   el.style.height = Math.min(el.scrollHeight, 140) + "px";
 };
 
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 function formatAssistantText(text) {
   return escHtml(text)
     .replace(/\*\*(.*?)\*\*/gs, "<strong>$1</strong>")
@@ -431,11 +438,25 @@ window.askAI = async () => {
     let full = "";
     try {
       const parsed = JSON.parse(raw);
-      full =
-        parsed?.choices?.[0]?.message?.content ||
-        parsed?.choices?.[0]?.text ||
-        parsed?.message?.content ||
-        "";
+      const msgContent = parsed?.choices?.[0]?.message?.content;
+      if (typeof msgContent === "string") {
+        full = msgContent;
+      } else if (Array.isArray(msgContent)) {
+        full = msgContent
+          .map((part) => {
+            if (typeof part === "string") return part;
+            if (part && typeof part.text === "string") return part.text;
+            if (part && typeof part.content === "string") return part.content;
+            return "";
+          })
+          .join("");
+      } else if (typeof parsed?.choices?.[0]?.text === "string") {
+        full = parsed.choices[0].text;
+      } else if (typeof parsed?.message?.content === "string") {
+        full = parsed.message.content;
+      } else {
+        full = "";
+      }
     } catch (_) {
       full = raw || "";
     }
