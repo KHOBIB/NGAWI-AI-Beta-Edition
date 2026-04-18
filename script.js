@@ -378,99 +378,91 @@ window.askAI = async () => {
     const messagesToSend =
       history.length > 32 ? [history[0], ...history.slice(-30)] : history;
 
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-2.0-flash-001",
-        messages: messagesToSend,
-        stream: true,
-        max_tokens: 4096,
-        temperature: 0.85,
-      }),
-    });
-
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let full = "",
-      started = false,
-      buffer = "";
-
-    const processLine = (line) => {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data:")) return;
-      const data = trimmed.slice(trimmed.indexOf(":") + 1).trim();
-      if (data === "[DONE]" || !data) return;
+    const callChatApi = async () => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 40000);
       try {
-        const parsed = JSON.parse(data);
-        const content = parsed?.choices?.[0]?.delta?.content;
-        if (content && typeof content === "string" && content.length > 0) {
-          full += content;
-          if (!started) {
-            const tm = document.getElementById("typing-msg-" + lId);
-            if (tm)
-              tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
-            started = true;
-          }
-          const bubble = document.getElementById(lId);
-          if (bubble) {
-            bubble.innerHTML = formatAssistantMessage(full, {
-              streaming: true,
-            });
-            box.scrollTop = box.scrollHeight;
-          }
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: "google/gemini-2.0-flash-001",
+            preferred_models: [
+              "google/gemini-2.0-flash-001",
+              "google/gemini-2.0-flash-lite-001",
+              "openai/gpt-4o-mini",
+            ],
+            messages: messagesToSend,
+            stream: false,
+            max_tokens: 4096,
+            temperature: 0.85,
+          }),
+        });
+        const raw = await res.text().catch(() => "");
+        if (!res.ok) {
+          let errMsg = `HTTP ${res.status}`;
+          try {
+            const parsedErr = JSON.parse(raw);
+            errMsg =
+              parsedErr?.error?.message ||
+              parsedErr?.message ||
+              (typeof parsedErr?.error === "string"
+                ? parsedErr.error
+                : errMsg);
+          } catch (_) {}
+          throw new Error(errMsg);
         }
-      } catch (_) {
-        /* skip malformed chunks */
+        return raw;
+      } finally {
+        clearTimeout(timeout);
       }
     };
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) {
-        const flushed = decoder.decode(new Uint8Array(0), { stream: false });
-        if (flushed) buffer += flushed;
-        if (buffer.trim()) {
-          buffer.split("\n").forEach(processLine);
-          buffer = "";
-        }
-        break;
-      }
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      lines.forEach(processLine);
+    let raw = "";
+    try {
+      raw = await callChatApi();
+    } catch (firstErr) {
+      // Single retry for transient network/model routing failures.
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      raw = await callChatApi();
     }
 
-    // Flush remaining buffer
-    if (buffer.trim()) {
-      buffer.split("\n").forEach(processLine);
-    }
-
-    // Fallback: response terlalu pendek/terpotong
-    if (!full || full.trim().length < 15) {
+    let full = "";
+    try {
+      const parsed = JSON.parse(raw);
       full =
-        "Waduh maaf Rek, kayaknya jawaban gue ke-cut atau koneksi lagi gangguan nih. Coba kirim lagi pertanyaan lu ya, gue bakal jawab yang lengkap dan bener. Pastiin koneksi lu stabil juga biar streaming-nya lancar! 😹";
-      const tm = document.getElementById("typing-msg-" + lId);
-      if (tm) {
-        if (!started)
-          tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
-        const bubble = document.getElementById(lId);
-        if (bubble) bubble.innerHTML = formatAssistantMessage(full);
-      }
+        parsed?.choices?.[0]?.message?.content ||
+        parsed?.choices?.[0]?.text ||
+        parsed?.message?.content ||
+        "";
+    } catch (_) {
+      full = raw || "";
     }
 
-    document.getElementById(lId)?.querySelector(".typing-cursor")?.remove();
+    if (typeof full !== "string") full = String(full || "");
+    if (!full.trim()) {
+      full =
+        "Waduh maaf Rek, jawabannya kosong dari server. Coba kirim lagi ya, biasanya ini karena koneksi atau limit API lagi padat.";
+    }
+
+    const tm = document.getElementById("typing-msg-" + lId);
+    if (tm) {
+      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
+      const bubble = document.getElementById(lId);
+      if (bubble) bubble.innerHTML = formatAssistantMessage(full);
+    }
+
     history.push({ role: "assistant", content: full });
   } catch (e) {
     console.error("Chat error:", e);
     // Find the latest typing-indicator and show error
     const typingIndicators = document.querySelectorAll(".msg.ai");
     const tm = typingIndicators[typingIndicators.length - 1];
+    const detail = String(e?.message || "Unknown error").slice(0, 220);
     if (tm)
-      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble">Koneksi error Rek! Coba lagi ya, mungkin koneksi lu lagi lemot atau server lagi sibuk. 😹</div>`;
+      tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble">Chat error Rek: ${escHtml(detail)}<br>Coba lagi bentar, kalau masih sama berarti API key atau limit model lagi bermasalah.</div>`;
+    window.showAlert(`Chat error: ${detail}`);
   } finally {
     sendBtn.disabled = false;
   }
@@ -533,12 +525,12 @@ window.openAuth = (m) => {
   const modal = document.getElementById("authModal");
   if (!modal) return;
   modal.style.display = "flex";
-
+  
   // Trigger reflow for animations
   const formContainer = modal.querySelector(".auth-form-container");
   if (formContainer) {
     formContainer.classList.remove("animate");
-    void formContainer.offsetWidth;
+    void formContainer.offsetWidth; 
     formContainer.classList.add("animate");
   }
 
@@ -1151,17 +1143,14 @@ window.applyCrop = function () {
 
   /* ── Helper: Ambil antrean putar saat ini (Semua vs Favorit) ── */
   function getCurrentQueue() {
-    return isPlayingFavorites
-      ? playlist.filter((t) => isFavTrack(t))
-      : playlist;
+    return isPlayingFavorites ? playlist.filter((t) => isFavTrack(t)) : playlist;
   }
   let audioCtx = null,
     analyser = null,
     sourceConnected = false;
   let currentMobileTab = null;
   let lastTabTouchAt = 0;
-  const isMobileViewport = () =>
-    window.matchMedia("(max-width: 768px)").matches;
+  const isMobileViewport = () => window.matchMedia("(max-width: 768px)").matches;
 
   const audio = new Audio();
   audio.volume = parseFloat(localStorage.getItem("ngawi-vol") || "0.8");
@@ -1266,20 +1255,17 @@ window.applyCrop = function () {
     const cleanName = (s) => {
       if (!s) return "";
       return s
-        .replace(/^\d+[\s.-]*/, "")
-        .replace(/\(.*\)|\[.*\]/g, "")
-        .replace(/feat\..*|ft\..*/i, "")
-        .replace(/\.mp3|\.m4a|\.wav|\.flac/i, "")
+        .replace(/^\d+[\s.-]*/, "") 
+        .replace(/\(.*\)|\[.*\]/g, "") 
+        .replace(/feat\..*|ft\..*/i, "") 
+        .replace(/\.mp3|\.m4a|\.wav|\.flac/i, "") 
         .trim();
     };
 
     const tryiTunes = async (q) => {
       if (!q || q.length < 2) return null;
       try {
-        const query = q
-          .replace(/[^\w\s-]/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
+        const query = q.replace(/[^\w\s-]/g, " ").replace(/\s+/g, " ").trim();
         const url = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&entity=song&limit=1`;
         const res = await fetch(url);
         const data = await res.json();
@@ -1303,16 +1289,14 @@ window.applyCrop = function () {
         const data = await res.json();
         const content = JSON.parse(data.contents);
         if (content.data && content.data.length > 0) {
-          return (
-            content.data[0].album.cover_xl || content.data[0].album.cover_big
-          );
+          return content.data[0].album.cover_xl || content.data[0].album.cover_big;
         }
       } catch (_) {}
       return null;
     };
 
     const fullClean = cleanName(trackName);
-
+    
     // Step 1: Try iTunes with full name
     let cover = await tryiTunes(fullClean);
     if (cover) return cover;
@@ -1325,11 +1309,11 @@ window.applyCrop = function () {
     if (trackName.includes(" - ")) {
       const parts = trackName.split(" - ");
       const title = cleanName(parts[1]);
-
+      
       cover = await tryiTunes(title);
       if (!cover) cover = await tryDeezer(title);
     }
-
+    
     return cover;
   }
 
@@ -1338,17 +1322,16 @@ window.applyCrop = function () {
     const albumEl = document.getElementById("albumArt");
     currentAlbumCoverUrl = coverUrl || null;
     if (!albumEl) return;
-
+    
     // Ensure emoji span exists
     let emojiEl = albumEl.querySelector(".album-art-emoji");
     if (!emojiEl) {
       const textNodes = Array.from(albumEl.childNodes).filter(
         (n) => n.nodeType === 3 && n.textContent.trim(),
       );
-      const emojiText =
-        textNodes.length > 0 ? textNodes[0].textContent.trim() : "🎵";
+      const emojiText = textNodes.length > 0 ? textNodes[0].textContent.trim() : "🎵";
       if (textNodes.length > 0) textNodes[0].remove();
-
+      
       emojiEl = document.createElement("span");
       emojiEl.className = "album-art-emoji";
       emojiEl.textContent = emojiText;
@@ -1356,8 +1339,8 @@ window.applyCrop = function () {
     }
 
     // Remove all existing imgs
-    albumEl.querySelectorAll(".album-art-img").forEach((img) => img.remove());
-
+    albumEl.querySelectorAll(".album-art-img").forEach(img => img.remove());
+    
     if (!coverUrl) {
       emojiEl.style.opacity = "1";
       _updateSideMiniInfo();
@@ -1372,7 +1355,7 @@ window.applyCrop = function () {
       emojiEl.style.opacity = "0";
       // Ensure the URL matches current track after load
       if (currentAlbumCoverUrl === coverUrl) {
-        _updateSideMiniInfo();
+          _updateSideMiniInfo();
       }
     };
     img.onerror = () => {
@@ -1410,8 +1393,7 @@ window.applyCrop = function () {
       });
     });
     const lastTrack = parseInt(localStorage.getItem("ngawi-track") || "-1");
-    const wasPlayingFavs =
-      localStorage.getItem("ngawi-playing-favs") === "true";
+    const wasPlayingFavs = localStorage.getItem("ngawi-playing-favs") === "true";
     scheduleRenderPlaylist();
     if (lastTrack >= 0 && lastTrack < playlist.length)
       loadTrack(lastTrack, false, wasPlayingFavs);
@@ -1426,10 +1408,7 @@ window.applyCrop = function () {
 
   function resizeCanvas() {
     if (!canvas) return;
-    const dpr = Math.min(
-      window.devicePixelRatio || 1,
-      isMobileViewport() ? 1.5 : 2,
-    );
+    const dpr = Math.min(window.devicePixelRatio || 1, isMobileViewport() ? 1.5 : 2);
     canvas.width = Math.floor(canvas.offsetWidth * dpr);
     canvas.height = Math.floor(canvas.offsetHeight * dpr);
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1569,8 +1548,7 @@ window.applyCrop = function () {
     lastActiveLine = -1;
     setAlbumCover(null);
     fetchAlbumCover(track.name).then((coverUrl) => {
-      if (currentTrack === idx && isPlayingFavorites === fromFavs)
-        setAlbumCover(coverUrl);
+      if (currentTrack === idx && isPlayingFavorites === fromFavs) setAlbumCover(coverUrl);
     });
     _updateSideMiniInfo();
     syncLikeBtn();
@@ -1657,7 +1635,7 @@ window.applyCrop = function () {
         ? Math.floor(Math.random() * queue.length)
         : (currentTrack + 1) % queue.length,
       true,
-      isPlayingFavorites,
+      isPlayingFavorites
     );
   };
   window.prevTrack = function () {
@@ -1670,7 +1648,7 @@ window.applyCrop = function () {
     window.loadTrack(
       (currentTrack - 1 + queue.length) % queue.length,
       true,
-      isPlayingFavorites,
+      isPlayingFavorites
     );
   };
   window.shuffleTrack = function () {
@@ -1698,7 +1676,7 @@ window.applyCrop = function () {
     if (!slider) return;
     const pct = Math.max(0, Math.min(100, ratio * 100));
     const isLight = document.body.getAttribute("data-theme") === "light";
-
+    
     if (isLight) {
       // Warna aksen untuk mode terang agar kontras
       slider.style.background = `linear-gradient(to right, var(--accent) 0%, var(--accent) ${pct}%, var(--accent-dim) ${pct}%, var(--accent-dim) 100%)`;
@@ -1761,21 +1739,16 @@ window.applyCrop = function () {
   };
 
   window.toggleFavFromListObject = function (idOrName) {
-    const track = playlist.find(
-      (t) => t.id === idOrName || t.name === idOrName,
-    );
+    const track = playlist.find((t) => t.id === idOrName || t.name === idOrName);
     if (!track) return;
     const isLiked = isFavTrack(track);
     setFavTrack(track, !isLiked);
-
+    
     // Sinkronisasi jika track ini sedang diputar
     const queue = getCurrentQueue();
     const playingTrack = queue[currentTrack];
-    if (
-      playingTrack &&
-      (playingTrack.id === track.id || playingTrack.name === track.name)
-    ) {
-      syncLikeBtn();
+    if (playingTrack && (playingTrack.id === track.id || playingTrack.name === track.name)) {
+        syncLikeBtn();
     }
 
     _lastRenderedPlaylistLength = -1;
@@ -1817,11 +1790,11 @@ window.applyCrop = function () {
     URL.revokeObjectURL(track.url);
     removeTrackFromDB(track.id);
     playlist.splice(idx, 1);
-
+    
     if (isPlayingFavorites) {
-      // Jika sedang putar favorit, kembalikan ke mode semua lagu jika ada perubahan drastis
-      // atau tetap di mode favorit tapi reset indeks
-      isPlayingFavorites = false;
+        // Jika sedang putar favorit, kembalikan ke mode semua lagu jika ada perubahan drastis
+        // atau tetap di mode favorit tapi reset indeks
+        isPlayingFavorites = false; 
     }
 
     if (currentTrack === idx) {
@@ -1872,9 +1845,10 @@ window.applyCrop = function () {
     }
     const isPlaying = !audio.paused;
     container.innerHTML = playlist
-      .map((t, i) => {
-        const isActive = !isPlayingFavorites && i === currentTrack;
-        return `
+      .map(
+        (t, i) => {
+          const isActive = !isPlayingFavorites && i === currentTrack;
+          return `
       <div class="playlist-item ${isActive ? "active" : ""}" onclick="window.loadTrack(${i}, true, false)">
         <div class="playlist-item-num">${isActive && isPlaying ? "▶" : i + 1}</div>
         <div class="playlist-item-info">
@@ -1888,7 +1862,8 @@ window.applyCrop = function () {
           <span class="material-symbols-rounded">close</span>
         </button>
       </div>`;
-      })
+        },
+      )
       .join("");
   }
 
@@ -1957,8 +1932,7 @@ window.applyCrop = function () {
         ct.textContent = formatTime(audio.currentTime);
       }
     }
-    if (tt && durationLabel !== lastRenderedDurationLabel)
-      tt.textContent = durationLabel;
+    if (tt && durationLabel !== lastRenderedDurationLabel) tt.textContent = durationLabel;
     lastRenderedCurrentSecond = currentSecond;
     lastRenderedDurationLabel = durationLabel;
     if (syncedLines.length > 0) {
@@ -2018,9 +1992,7 @@ window.applyCrop = function () {
         const pe = window.getComputedStyle(container).pointerEvents;
         if (pe === "none") return;
         const targetTop =
-          activeLine.offsetTop -
-          container.clientHeight / 2 +
-          activeLine.clientHeight / 2;
+          activeLine.offsetTop - container.clientHeight / 2 + activeLine.clientHeight / 2;
         container.scrollTo({
           top: Math.max(0, targetTop),
           behavior: isDesktop ? "smooth" : "auto",
@@ -2086,11 +2058,8 @@ window.applyCrop = function () {
   document.addEventListener("keydown", (e) => {
     // Pastikan user tidak sedang mengetik di input chat atau textarea
     const activeEl = document.activeElement;
-    const isInput =
-      activeEl.tagName === "INPUT" ||
-      activeEl.tagName === "TEXTAREA" ||
-      activeEl.isContentEditable;
-
+    const isInput = activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA" || activeEl.isContentEditable;
+    
     if (e.code === "Space" && !isInput) {
       e.preventDefault(); // Cegah scroll halaman saat tekan spasi
       window.togglePlay();
@@ -2101,11 +2070,7 @@ window.applyCrop = function () {
     const queue = getCurrentQueue();
     if (!isRepeat) {
       if (isShuffle)
-        window.loadTrack(
-          Math.floor(Math.random() * queue.length),
-          true,
-          isPlayingFavorites,
-        );
+        window.loadTrack(Math.floor(Math.random() * queue.length), true, isPlayingFavorites);
       else if (currentTrack < queue.length - 1) window.nextTrack();
       else {
         updatePlayerUI(false);
