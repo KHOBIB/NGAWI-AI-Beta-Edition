@@ -741,6 +741,7 @@ header::before {
 }
 .msg.ai {
   animation: recvBubble 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+  flex-wrap: wrap;
 }
 @keyframes sendBubble {
   0% {
@@ -2801,24 +2802,30 @@ input[type="range"].vol-slider::-moz-range-thumb {
   border-radius: 1px;
 }
 .reply-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0 0 46px;
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin: 6px 0 0 46px;
+  width: fit-content;
+  max-width: calc(100% - 46px);
+  order: 3;
 }
 .reply-action-btn {
   border: 1px solid var(--glass-border);
   background: var(--glass);
   color: var(--text2);
   border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 11px;
+  padding: 5px 10px;
+  min-height: 28px;
+  font-size: 10.5px;
+  line-height: 1;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.16s ease;
+  white-space: nowrap;
 }
 .reply-action-btn[data-qact="copy"],
-.reply-action-btn[data-qact="regen"] {
+.reply-action-btn[data-qact="ringkas"] {
   font-weight: 700;
 }
 .reply-action-btn:hover {
@@ -4104,11 +4111,12 @@ input[type="range"].vol-slider::-moz-range-thumb {
   }
   .reply-actions {
     margin-left: 42px;
-    gap: 6px;
+    gap: 5px;
   }
   .reply-action-btn {
-    padding: 6px 9px;
-    font-size: 10px;
+    padding: 5px 8px;
+    font-size: 9.5px;
+    min-height: 26px;
   }
   .desktop-only {
     display: none !important;

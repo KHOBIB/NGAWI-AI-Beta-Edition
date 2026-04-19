@@ -588,9 +588,8 @@ function addReplyQuickActions(aiMsgEl) {
   wrap.className = "reply-actions";
   wrap.innerHTML = `
     <button class="reply-action-btn" data-qact="copy">Copy</button>
-    <button class="reply-action-btn" data-qact="regen">Regenerate</button>
     <button class="reply-action-btn" data-qact="ringkas">Ringkas</button>
-    <button class="reply-action-btn" data-qact="contoh">Kasih Contoh</button>
+    <button class="reply-action-btn" data-qact="contoh">Contoh</button>
   `;
   aiMsgEl.appendChild(wrap);
 }
@@ -620,25 +619,6 @@ async function copyToClipboard(text) {
   }
 }
 
-function extractLatestUserPrompt() {
-  for (let i = history.length - 1; i >= 0; i--) {
-    const msg = history[i];
-    if (!msg || msg.role !== "user") continue;
-    if (typeof msg.content === "string" && msg.content.trim()) {
-      return msg.content.trim();
-    }
-    if (Array.isArray(msg.content)) {
-      const txt = msg.content
-        .filter((p) => p?.type === "text" && typeof p.text === "string")
-        .map((p) => p.text.trim())
-        .filter(Boolean)
-        .join("\n");
-      if (txt) return txt;
-    }
-  }
-  return "";
-}
-
 window.runQuickAction = async (action, sourceBtn = null) => {
   if (action === "copy") {
     const text = sourceBtn
@@ -647,20 +627,6 @@ window.runQuickAction = async (action, sourceBtn = null) => {
       ?.textContent?.trim();
     const copied = await copyToClipboard(text);
     window.showAlert(copied ? "Jawaban berhasil dicopy" : "Gagal copy jawaban");
-    return;
-  }
-  if (action === "regen") {
-    const latestPrompt = extractLatestUserPrompt();
-    if (!latestPrompt) {
-      window.showAlert("Belum ada prompt user buat di-regenerate");
-      return;
-    }
-    const input = document.getElementById("uIn");
-    if (!input) return;
-    input.value = latestPrompt;
-    window.autoResizeTA(input);
-    window.updatePlaceholder();
-    await window.askAI();
     return;
   }
   const prompts = {
