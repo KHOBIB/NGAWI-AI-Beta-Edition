@@ -162,6 +162,14 @@
         >
           <span class="material-symbols-rounded">psychology</span>
         </button>
+        <button
+          class="icon-btn desktop-only"
+          onclick="window.openVoiceCloneModal()"
+          title="Voice Clone"
+          id="voiceCloneBtn"
+        >
+          <span class="material-symbols-rounded">graphic_eq</span>
+        </button>
         <div id="profileTrigger">
           <button class="icon-btn" onclick="window.toggleSidebar()">
             <span class="material-symbols-rounded" style="font-size: 26px"
@@ -262,6 +270,15 @@
       </div>
       <div class="input-hint">
         Enter untuk kirim · Shift+Enter untuk baris baru
+      </div>
+      <div class="dev-tools-bar" id="devToolsBar">
+        <button class="dev-tool-btn off" data-devtool="">Mode Off</button>
+        <button class="dev-tool-btn" data-devtool="debug">Debug Copilot</button>
+        <button class="dev-tool-btn" data-devtool="review">Code Review</button>
+        <button class="dev-tool-btn" data-devtool="demo">Auto Demo</button>
+        <button class="dev-tool-btn" data-devtool="explain">Explain File</button>
+        <button class="dev-tool-btn" data-devtool="pr">PR Draft</button>
+        <button class="dev-tool-btn" data-devtool="incident">Incident Helper</button>
       </div>
       <div class="site-footer">
         <span>© 2026 NGAWI AI</span>
@@ -596,6 +613,13 @@
             ><span>Sifat AI</span>
           </div>
           <div
+            class="sidebar-item mobile-sidebar-item"
+            onclick="window.openVoiceCloneModal()"
+          >
+            <span class="material-symbols-rounded">graphic_eq</span
+            ><span>Voice Clone</span>
+          </div>
+          <div
             class="sidebar-item sidebar-login-btn"
             onclick="
               window.closeSidebar();
@@ -614,6 +638,13 @@
           >
             <span class="material-symbols-rounded">psychology</span
             ><span>Sifat AI</span>
+          </div>
+          <div
+            class="sidebar-item mobile-sidebar-item"
+            onclick="window.openVoiceCloneModal()"
+          >
+            <span class="material-symbols-rounded">graphic_eq</span
+            ><span>Voice Clone</span>
           </div>
           <div class="sidebar-item" onclick="window.openEditProfile()">
             <span class="material-symbols-rounded">manage_accounts</span
@@ -1055,6 +1086,45 @@
       </div>
     </div>
 
+    <!-- ═══ VOICE CLONE MODAL ═══ -->
+    <div id="voiceCloneModal" class="modal">
+      <div class="modal-box voice-clone-modal-box">
+        <span class="modal-icon">🎙️</span>
+        <div class="modal-title">Voice Clone Assistant</div>
+        <p class="modal-sub">Pilih karakter suara biar jawaban AI terasa personal</p>
+        <div class="voice-style-grid" id="voiceStyleGrid">
+          <div class="voice-style-card" data-voice-style="mentor" onclick="window.setVoiceStyle('mentor')">
+            <div class="voice-style-icon">🧠</div>
+            <div class="voice-style-name">Mentor</div>
+            <div class="voice-style-desc">Tenang, jelas, cocok buat belajar</div>
+          </div>
+          <div class="voice-style-card" data-voice-style="santai" onclick="window.setVoiceStyle('santai')">
+            <div class="voice-style-icon">😎</div>
+            <div class="voice-style-name">Santai</div>
+            <div class="voice-style-desc">Casual, hangat, enak buat ngobrol</div>
+          </div>
+          <div class="voice-style-card" data-voice-style="formal" onclick="window.setVoiceStyle('formal')">
+            <div class="voice-style-icon">🎓</div>
+            <div class="voice-style-name">Formal</div>
+            <div class="voice-style-desc">Rapi, profesional, presentasi-ready</div>
+          </div>
+        </div>
+        <div class="voice-preview-row">
+          <button class="btn-ghost" onclick="window.previewVoiceClone()">
+            <span class="material-symbols-rounded">play_circle</span>
+            Preview Suara
+          </button>
+          <button class="btn-ghost" onclick="window.stopVoiceClone()">
+            <span class="material-symbols-rounded">stop_circle</span>
+            Stop
+          </button>
+        </div>
+        <button class="btn-primary" style="margin-top: 12px" onclick="window.closeVoiceCloneModal()">
+          <span class="btn-text">Selesai</span>
+        </button>
+      </div>
+    </div>
+
     <!-- ═══ IMAGE VIEWER MODAL ═══ -->
     <div
       id="imageViewerModal"
@@ -1079,4 +1149,3 @@
     <script type="module" src="script.min.js"></script>
   </body>
 </html>
-

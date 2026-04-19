@@ -58,6 +58,17 @@ const personalities = {
 };
 
 let currentPersonality = localStorage.getItem("ngawi-personality") || "teman";
+if (!personalities[currentPersonality]) currentPersonality = "teman";
+
+const VOICE_STYLE_KEY = "ngawi-voice-style";
+let currentVoiceStyle = localStorage.getItem(VOICE_STYLE_KEY) || "mentor";
+let currentSpeechUtterance = null;
+
+const voiceStylePresets = {
+  mentor: { label: "Mentor", rate: 0.92, pitch: 0.95, volume: 1 },
+  santai: { label: "Santai", rate: 1.04, pitch: 1.12, volume: 1 },
+  formal: { label: "Formal", rate: 0.9, pitch: 0.88, volume: 1 },
+};
 
 /* ── Vision Support ── */
 let selectedImages = [];
@@ -104,6 +115,57 @@ let history = [
     content: personalities[currentPersonality].prompt,
   },
 ];
+const devToolPresets = {
+  debug: {
+    label: "Debug Copilot",
+    placeholder: "Tempel error log/stack trace untuk bedah akar masalah...",
+    template:
+      "Konteks:\n- Language/Framework:\n- Environment:\n- Error message:\n- Stack trace:\n- Potongan kode terkait:\n- Yang sudah dicoba:",
+    instruction:
+      "Mode: Debug Copilot. Jawab ringkas dan profesional. Format wajib: 1) Root Cause 2) Fix Steps (berurutan) 3) Patch Snippet 4) Verification Checklist 5) Prevention Tips.",
+  },
+  review: {
+    label: "Code Review Brutal",
+    placeholder: "Paste kode yang mau direview secara ketat...",
+    template:
+      "Lakukan review untuk kode ini:\n\n```txt\n[paste kode di sini]\n```\n\nKonteks fitur:\nStandar kualitas tim:",
+    instruction:
+      "Mode: Code Review Brutal. Nilai seperti senior engineer. Kelompokkan temuan jadi Critical, Major, Minor + rekomendasi perbaikan praktis.",
+  },
+  demo: {
+    label: "Auto Demo Generator",
+    placeholder: "Tulis ide demo, AI bakal bikin mini app siap jalan...",
+    template:
+      "Bikin demo interaktif dengan detail ini:\n- Nama demo:\n- Tujuan:\n- Target user:\n- Fitur wajib:\n- Nuansa visual (warna/gaya):",
+    instruction:
+      "Mode: Auto Demo Generator. WAJIB hasilkan demo siap jalan. Output wajib berurutan: 1) Ringkasan singkat 2) ```html ... ``` 3) ```css ... ``` 4) ```javascript ... ```. Pastikan demo ringan, responsif mobile, ada interaksi klik/input, dan tidak pakai library eksternal.",
+  },
+  explain: {
+    label: "Explain This File",
+    placeholder: "Paste isi file, nanti dijelasin fungsi dan area rawan bug...",
+    template:
+      "Jelaskan file ini:\n\n```txt\n[paste file]\n```\n\nFokus yang diinginkan:\n- Arsitektur\n- Data flow\n- Potensi bug",
+    instruction:
+      "Mode: Explain This File. Berikan ringkasan fungsi file, dependency map, area rawan bug, dan rencana refactor bertahap.",
+  },
+  pr: {
+    label: "Prompt-to-PR Draft",
+    placeholder: "Tulis kebutuhan fitur, AI akan bikin draft PR profesional...",
+    template:
+      "Buat draft PR untuk kebutuhan ini:\n- Tujuan fitur:\n- Scope:\n- Batasan:\n- Kriteria selesai:",
+    instruction:
+      "Mode: Prompt-to-PR Draft. Output wajib: Tujuan, Scope, Daftar perubahan file, Test Plan, Risiko, Rollback Plan.",
+  },
+  incident: {
+    label: "Terminal Incident Helper",
+    placeholder: "Tempel log terminal/CI, nanti dibantu first aid command...",
+    template:
+      "Bantu incident ini:\n- Command yang dijalankan:\n- Error output terminal:\n- Environment:\n- Dampak ke user/service:",
+    instruction:
+      "Mode: Terminal Incident Helper. Output wajib: First Aid Command, Kemungkinan Penyebab (urut probabilitas), Recovery Plan, Fallback jika gagal.",
+  },
+};
+let currentDevTool = localStorage.getItem("ngawi-dev-tool") || "";
 
 /* ─────────────────────────────────────────
    PLACEHOLDER HELPER
@@ -112,13 +174,51 @@ window.updatePlaceholder = function () {
   const ta = document.getElementById("uIn");
   const ph = document.getElementById("inputPh");
   if (!ta || !ph) return;
+  const cfg = devToolPresets[currentDevTool];
+  ph.textContent = cfg?.placeholder || "Tanya NGAWI AI";
   if (ta.value.length > 0) ph.classList.add("hidden");
   else ph.classList.remove("hidden");
 };
 
+function syncChatWelcomeMode() {
+  const box = document.getElementById("chatBox");
+  const welcome = document.getElementById("welcome");
+  if (!box) return;
+  const isWelcomeVisible = !!welcome && welcome.style.display !== "none";
+  box.classList.toggle("welcome-mode", isWelcomeVisible);
+}
+
+function syncDevToolButtons() {
+  document.querySelectorAll(".dev-tool-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.devtool === currentDevTool);
+  });
+}
+
+window.setDevTool = (toolKey = "") => {
+  if (toolKey && !devToolPresets[toolKey]) return;
+  currentDevTool = toolKey || "";
+  localStorage.setItem("ngawi-dev-tool", currentDevTool);
+  syncDevToolButtons();
+  const input = document.getElementById("uIn");
+  const cfg = devToolPresets[currentDevTool];
+  if (input) {
+    if (cfg) input.value = cfg.template;
+    else input.value = "";
+    window.autoResizeTA(input);
+    input.focus();
+  }
+  window.updatePlaceholder();
+  window.showAlert(
+    cfg ? `Mode aktif: ${cfg.label}` : "Mode developer dimatikan",
+    "success",
+  );
+};
+
 document.addEventListener("DOMContentLoaded", () => {
+  syncDevToolButtons();
   window.updatePlaceholder();
   initCropCanvas();
+  syncChatWelcomeMode();
 });
 
 /* ─────────────────────────────────────────
@@ -216,9 +316,321 @@ function formatAssistantMessage(rawText, { streaming = false } = {}) {
   return html;
 }
 
+const demoRegistry = new Map();
+
+function ensureDemoStyles() {
+  if (document.getElementById("autoDemoStyles")) return;
+  const style = document.createElement("style");
+  style.id = "autoDemoStyles";
+  style.textContent = `
+    .auto-demo-card {
+      margin: 10px 0 2px 42px;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      border-radius: 14px;
+      overflow: hidden;
+      max-width: min(620px, calc(100vw - 72px));
+      box-shadow: 0 10px 26px rgba(0,0,0,.2);
+    }
+    .auto-demo-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 11px;
+      border-bottom: 1px solid var(--glass-border);
+      background: rgba(255,255,255,.03);
+    }
+    .auto-demo-title {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .3px;
+      color: var(--text);
+    }
+    .auto-demo-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .auto-demo-btn {
+      border: 1px solid var(--glass-border);
+      background: transparent;
+      color: var(--text2);
+      font-size: 10.5px;
+      font-weight: 600;
+      border-radius: 999px;
+      padding: 4px 9px;
+      cursor: pointer;
+      transition: all .16s ease;
+    }
+    .auto-demo-btn:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+    .auto-demo-frame {
+      width: 100%;
+      height: 320px;
+      border: 0;
+      background: #fff;
+      display: block;
+    }
+    @media (max-width: 600px) {
+      .auto-demo-card {
+        margin-left: 40px;
+      }
+      .auto-demo-frame {
+        height: 280px;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+function extractCodeBlocks(rawText = "") {
+  const blocks = [];
+  const regex = /```([\w.+-]*)\n?([\s\S]*?)```/g;
+  let m;
+  while ((m = regex.exec(String(rawText))) !== null) {
+    const lang = String(m[1] || "")
+      .trim()
+      .toLowerCase();
+    blocks.push({
+      lang,
+      code: String(m[2] || "").replace(/\n$/, ""),
+    });
+  }
+  return blocks;
+}
+
+function pickCodeBlock(blocks, langs = []) {
+  const want = new Set(langs.map((v) => String(v).toLowerCase()));
+  return blocks.find((b) => want.has(b.lang))?.code || "";
+}
+
+function injectIntoHtmlDoc(doc, cssCode, jsCode) {
+  let out = String(doc || "");
+  if (cssCode.trim()) {
+    const styleTag = `<style>\n${cssCode}\n</style>`;
+    if (/<\/head>/i.test(out)) out = out.replace(/<\/head>/i, `${styleTag}\n</head>`);
+    else out = `${styleTag}\n${out}`;
+  }
+  if (jsCode.trim()) {
+    const scriptTag = `<script>\n${jsCode}\n<\/script>`;
+    if (/<\/body>/i.test(out)) out = out.replace(/<\/body>/i, `${scriptTag}\n</body>`);
+    else out = `${out}\n${scriptTag}`;
+  }
+  return out;
+}
+
+function buildAutoDemoDoc(rawText = "") {
+  const blocks = extractCodeBlocks(rawText);
+  const htmlCode = pickCodeBlock(blocks, ["html", "htm"]);
+  const cssCode = pickCodeBlock(blocks, ["css"]);
+  const jsCode = pickCodeBlock(blocks, ["javascript", "js"]);
+
+  if (!htmlCode.trim() && !cssCode.trim() && !jsCode.trim()) return null;
+
+  if (/<html[\s>]/i.test(htmlCode)) {
+    return injectIntoHtmlDoc(htmlCode, cssCode, jsCode);
+  }
+
+  const bodyHtml = htmlCode.trim() || `<main style="font-family:system-ui;padding:20px"><h1>Demo Siap</h1><p>Tambahkan blok <code>html</code> untuk tampilan custom.</p></main>`;
+  return `<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Auto Demo</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { margin: 0; min-height: 100vh; font-family: Inter, system-ui, sans-serif; }
+      ${cssCode || ""}
+    </style>
+  </head>
+  <body>
+    ${bodyHtml}
+    <script>
+      ${jsCode || ""}
+    <\/script>
+  </body>
+</html>`;
+}
+
+function extractDemoTitle(rawText = "") {
+  const m = String(rawText || "").match(
+    /(judul demo|nama demo)\s*[:\-]\s*(.+)/i,
+  );
+  return m?.[2]?.trim() || "Live Auto Demo";
+}
+
+function attachAutoDemoPreview(aiMsgEl, rawText) {
+  if (!aiMsgEl) return;
+  const demoDoc = buildAutoDemoDoc(rawText);
+  if (!demoDoc) return;
+  ensureDemoStyles();
+  const demoId = `demo-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  demoRegistry.set(demoId, {
+    id: demoId,
+    title: extractDemoTitle(rawText),
+    doc: demoDoc,
+  });
+  const card = document.createElement("div");
+  card.className = "auto-demo-card";
+  card.innerHTML = `
+    <div class="auto-demo-head">
+      <div class="auto-demo-title">${escHtml(extractDemoTitle(rawText))}</div>
+      <div class="auto-demo-actions">
+        <button class="auto-demo-btn" onclick="window.refreshGeneratedDemo('${demoId}')">Refresh</button>
+        <button class="auto-demo-btn" onclick="window.openGeneratedDemo('${demoId}')">Fullscreen</button>
+      </div>
+    </div>
+    <iframe class="auto-demo-frame" data-demo-frame="${demoId}" sandbox="allow-scripts allow-modals" loading="lazy"></iframe>
+  `;
+  aiMsgEl.appendChild(card);
+  const frame = card.querySelector("iframe");
+  if (frame) frame.srcdoc = demoDoc;
+}
+
+window.refreshGeneratedDemo = (demoId) => {
+  const data = demoRegistry.get(demoId);
+  if (!data) {
+    window.showAlert("Demo tidak ditemukan");
+    return;
+  }
+  const frame = document.querySelector(`iframe[data-demo-frame="${demoId}"]`);
+  if (!frame) return;
+  frame.srcdoc = "";
+  requestAnimationFrame(() => {
+    frame.srcdoc = data.doc;
+  });
+};
+
+window.openGeneratedDemo = (demoId) => {
+  const data = demoRegistry.get(demoId);
+  if (!data) {
+    window.showAlert("Demo tidak ditemukan");
+    return;
+  }
+  const w = window.open("", "_blank", "noopener,noreferrer");
+  if (!w) {
+    window.showAlert("Popup diblokir browser. Izinkan popup dulu ya.");
+    return;
+  }
+  w.document.open();
+  w.document.write(data.doc);
+  w.document.close();
+};
+
 function setBtnLoading(id, on) {
   document.getElementById(id)?.classList[on ? "add" : "remove"]("loading");
 }
+
+function pickVoiceForCurrentStyle() {
+  const synth = window.speechSynthesis;
+  if (!synth) return null;
+  const voices = synth.getVoices() || [];
+  if (!voices.length) return null;
+  const idVoices = voices.filter((v) => /id[-_]?id|indonesia/i.test(v.lang || ""));
+  const list = idVoices.length ? idVoices : voices;
+  if (currentVoiceStyle === "formal") {
+    return (
+      list.find((v) => /male|andika|dimas|aditya|fajar/i.test(v.name || "")) ||
+      list[0]
+    );
+  }
+  if (currentVoiceStyle === "santai") {
+    return (
+      list.find((v) => /female|siti|vina|sarah|ana/i.test(v.name || "")) ||
+      list[0]
+    );
+  }
+  return list[0];
+}
+
+window.stopVoiceClone = () => {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  currentSpeechUtterance = null;
+};
+
+window.speakTextWithVoiceClone = (text) => {
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+    window.showAlert("Browser belum dukung voice clone di device ini");
+    return;
+  }
+  const val = String(text || "").trim();
+  if (!val) {
+    window.showAlert("Teks kosong, belum ada yang dibacain");
+    return;
+  }
+  window.stopVoiceClone();
+  const preset = voiceStylePresets[currentVoiceStyle] || voiceStylePresets.mentor;
+  const utter = new SpeechSynthesisUtterance(val);
+  const voice = pickVoiceForCurrentStyle();
+  if (voice) utter.voice = voice;
+  utter.lang = (voice && voice.lang) || "id-ID";
+  utter.rate = preset.rate;
+  utter.pitch = preset.pitch;
+  utter.volume = preset.volume;
+  utter.onend = () => {
+    currentSpeechUtterance = null;
+  };
+  utter.onerror = () => {
+    currentSpeechUtterance = null;
+    window.showAlert("Gagal memutar suara. Coba lagi ya");
+  };
+  currentSpeechUtterance = utter;
+  window.speechSynthesis.speak(utter);
+};
+
+function syncVoiceStyleCards() {
+  document.querySelectorAll(".voice-style-card").forEach((card) => {
+    card.classList.toggle(
+      "active",
+      card.dataset.voiceStyle === currentVoiceStyle,
+    );
+  });
+}
+
+window.openVoiceCloneModal = () => {
+  window.closeSidebar();
+  const m = document.getElementById("voiceCloneModal");
+  if (!m) return;
+  m.style.display = "flex";
+  setTimeout(() => m.classList.add("active"), 10);
+  syncVoiceStyleCards();
+};
+
+window.closeVoiceCloneModal = () => {
+  const m = document.getElementById("voiceCloneModal");
+  if (!m) return;
+  m.classList.remove("active");
+  setTimeout(() => (m.style.display = "none"), 350);
+};
+
+window.setVoiceStyle = (styleKey) => {
+  if (!voiceStylePresets[styleKey]) return;
+  currentVoiceStyle = styleKey;
+  localStorage.setItem(VOICE_STYLE_KEY, styleKey);
+  syncVoiceStyleCards();
+  window.showAlert(`Voice aktif: ${voiceStylePresets[styleKey].label}`, "success");
+};
+
+window.previewVoiceClone = () => {
+  const lines = {
+    mentor:
+      "Halo rek, ini mode mentor. Saya bakal jelasin pelan, jelas, dan runtut biar gampang dipahami.",
+    santai:
+      "Wih rek, ini mode santai. Kita ngobrol asik aja tapi tetap dapet solusi yang kepake.",
+    formal:
+      "Selamat datang. Ini mode formal dengan intonasi profesional untuk presentasi dan komunikasi resmi.",
+  };
+  window.speakTextWithVoiceClone(lines[currentVoiceStyle] || lines.mentor);
+};
+
+window.addEventListener("beforeunload", () => {
+  window.stopVoiceClone();
+});
 
 /* ─────────────────────────────────────────
    THEME
@@ -281,6 +693,7 @@ function showFunToast() {
 window.clearChat = () => {
   history = [history[0]];
   document.getElementById("chatBox").innerHTML = buildWelcomeHTML();
+  syncChatWelcomeMode();
   window.showAlert("Chat direset! Fresh start Rek 😹", "success");
   setTimeout(() => {
     applyDynamicWelcome();
@@ -408,6 +821,11 @@ window.askAI = async () => {
   const input = document.getElementById("uIn");
   const sendBtn = document.getElementById("sendBtn");
   const prompt = input.value.trim();
+  const activeDevMode = devToolPresets[currentDevTool];
+  const effectivePrompt =
+    activeDevMode && prompt
+      ? `${activeDevMode.instruction}\n\nPermintaan user:\n${prompt}`
+      : prompt;
 
   if (!prompt && selectedImages.length === 0) {
     window.showAlert("Isi dulu pertanyaannya atau pilih gambar Rek");
@@ -421,11 +839,12 @@ window.askAI = async () => {
 
     const welcome = document.getElementById("welcome");
     if (welcome) welcome.style.display = "none";
+    syncChatWelcomeMode();
 
     // Build user message content (text + images)
     let userMessageContent = [];
     if (prompt) {
-      userMessageContent.push({ type: "text", text: prompt });
+      userMessageContent.push({ type: "text", text: effectivePrompt });
     }
 
     let displayHtml = prompt.replace(/\n/g, "<br>");
@@ -468,7 +887,7 @@ window.askAI = async () => {
     // Add to history (handling multimodal if images present)
     const newUserMsg = {
       role: "user",
-      content: imagesToSubmit.length > 0 ? userMessageContent : prompt,
+      content: imagesToSubmit.length > 0 ? userMessageContent : effectivePrompt,
     };
     history.push(newUserMsg);
 
@@ -564,6 +983,7 @@ window.askAI = async () => {
       const bubble = document.getElementById(lId);
       if (bubble) bubble.innerHTML = formatAssistantMessage(full);
       addReplyQuickActions(tm);
+      attachAutoDemoPreview(tm, full);
     }
 
     history.push({ role: "assistant", content: full });
@@ -588,6 +1008,7 @@ function addReplyQuickActions(aiMsgEl) {
   wrap.className = "reply-actions";
   wrap.innerHTML = `
     <button class="reply-action-btn" data-qact="copy">Copy</button>
+    <button class="reply-action-btn" data-qact="voice">Suara</button>
     <button class="reply-action-btn" data-qact="ringkas">Ringkas</button>
     <button class="reply-action-btn" data-qact="contoh">Contoh</button>
   `;
@@ -629,6 +1050,14 @@ window.runQuickAction = async (action, sourceBtn = null) => {
     window.showAlert(copied ? "Jawaban berhasil dicopy" : "Gagal copy jawaban");
     return;
   }
+  if (action === "voice") {
+    const text = sourceBtn
+      ?.closest(".msg.ai")
+      ?.querySelector(".bubble")
+      ?.textContent?.trim();
+    window.speakTextWithVoiceClone(text);
+    return;
+  }
   const prompts = {
     ringkas: "Ringkas jawaban terakhir jadi 3 poin inti yang paling penting.",
     contoh: "Kasih 2 contoh praktis dari jawaban terakhir biar gampang dipraktekin.",
@@ -645,6 +1074,11 @@ window.runQuickAction = async (action, sourceBtn = null) => {
 };
 
 document.addEventListener("click", (e) => {
+  const modeBtn = e.target.closest(".dev-tool-btn");
+  if (modeBtn) {
+    window.setDevTool(modeBtn.dataset.devtool);
+    return;
+  }
   const btn = e.target.closest(".reply-action-btn");
   if (!btn) return;
   window.runQuickAction(btn.dataset.qact, btn);
@@ -654,6 +1088,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ensureAiPresenceChip();
   window.setAiPresence("ready");
   applyDynamicWelcome();
+  syncVoiceStyleCards();
 });
 
 function addBubble(role, text, id = "") {
