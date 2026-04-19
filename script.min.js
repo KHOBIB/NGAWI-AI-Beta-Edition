@@ -283,14 +283,70 @@ window.clearChat = () => {
   document.getElementById("chatBox").innerHTML = buildWelcomeHTML();
   window.showAlert("Chat direset! Fresh start Rek 😹", "success");
   setTimeout(() => {
-    const u = auth.currentUser;
-    const wt = document.getElementById("welcomeText");
-    if (wt && u)
-      wt.textContent = `Halo ${(u.displayName || u.email.split("@")[0]).split(" ")[0]},`;
+    applyDynamicWelcome();
+    window.setAiPresence("ready");
   }, 50);
 };
 
+function getShortUserName() {
+  const u = auth.currentUser;
+  if (!u) return "User Tercinta";
+  return (u.displayName || u.email.split("@")[0]).split(" ")[0];
+}
+
+function getTimeGreeting(name) {
+  const h = new Date().getHours();
+  if (h < 10) return `Selamat pagi ${name}`;
+  if (h < 15) return `Selamat siang ${name}`;
+  if (h < 18) return `Selamat sore ${name}`;
+  return `Selamat malam ${name}`;
+}
+
+function getWelcomeSubByTime() {
+  const h = new Date().getHours();
+  if (h < 10) return "Siapin kopi dulu coy sebelum ngobrol";
+  if (h < 15) return "Siang gini paling pas buat produktif bareng NGAWI AI";
+  if (h < 18) return "Sore gini enaknya ngapain ya?";
+  return "Malem malem gini enak nya ngopi coy";
+}
+
+function applyDynamicWelcome() {
+  const wt = document.getElementById("welcomeText");
+  const sub = document.querySelector("#welcome .welcome-sub");
+  const name = getShortUserName();
+  if (wt) wt.textContent = `${getTimeGreeting(name)},`;
+  if (sub) sub.textContent = getWelcomeSubByTime();
+}
+
+function ensureAiPresenceChip() {
+  let chip = document.getElementById("aiPresenceChip");
+  if (chip) return chip;
+  const actions = document.querySelector("header .header-actions");
+  if (!actions) return null;
+  chip = document.createElement("div");
+  chip.id = "aiPresenceChip";
+  chip.className = "ai-presence-chip";
+  actions.insertBefore(chip, actions.firstChild);
+  return chip;
+}
+
+window.setAiPresence = (state = "ready") => {
+  const chip = ensureAiPresenceChip();
+  if (!chip) return;
+  const map = {
+    ready: { text: "SIAP", cls: "ready" },
+    thinking: { text: "MIKIR", cls: "thinking" },
+    typing: { text: "NGETIK", cls: "typing" },
+  };
+  const s = map[state] || map.ready;
+  chip.className = `ai-presence-chip ${s.cls}`;
+  chip.textContent = `AI · ${s.text}`;
+};
+
 function buildWelcomeHTML() {
+  const name = getShortUserName();
+  const title = escHtml(getTimeGreeting(name));
+  const sub = escHtml(getWelcomeSubByTime());
   return `
     <div id="welcome">
       <div class="welcome-orb-wrap">
@@ -298,8 +354,8 @@ function buildWelcomeHTML() {
           <img src="nyan.gif" class="welcome-gif" alt="Rainbow Cat" />
         </div>
       </div>
-      <h2 id="welcomeText">Halo User Tercinta,</h2>
-      <p class="welcome-sub">NGAWI AI siap tempur. Tanya apa aja Rek! 😹</p>
+      <h2 id="welcomeText">${title},</h2>
+      <p class="welcome-sub">${sub}</p>
       <div class="pixel-status">ONLINE · READY</div>
       <div class="chips-grid">
         <div class="chip" onclick="useChip(this)"><span class="chip-icon">🧠</span><span class="chip-text">Jelasin konsep AI</span></div>
@@ -360,6 +416,7 @@ window.askAI = async () => {
 
   try {
     sendBtn.disabled = true;
+    window.setAiPresence("thinking");
     spawnParticles(sendBtn);
 
     const welcome = document.getElementById("welcome");
@@ -402,10 +459,11 @@ window.askAI = async () => {
       <div class="ai-avatar">N</div>
       <div class="typing-indicator-wrap" id="${lId}">
         <div class="typing-dots"><span></span><span></span><span></span></div>
-        <div class="typing-label">Bentar lagi ngetik...</div>
+        <div class="typing-label">AI lagi mikir...</div>
       </div>`;
     box.appendChild(typingD);
     box.scrollTop = box.scrollHeight;
+    window.setAiPresence("typing");
 
     // Add to history (handling multimodal if images present)
     const newUserMsg = {
@@ -505,6 +563,7 @@ window.askAI = async () => {
       tm.innerHTML = `<div class="ai-avatar">N</div><div class="bubble" id="${lId}"></div>`;
       const bubble = document.getElementById(lId);
       if (bubble) bubble.innerHTML = formatAssistantMessage(full);
+      addReplyQuickActions(tm);
     }
 
     history.push({ role: "assistant", content: full });
@@ -519,8 +578,117 @@ window.askAI = async () => {
     window.showAlert(`Chat error: ${detail}`);
   } finally {
     sendBtn.disabled = false;
+    window.setAiPresence("ready");
   }
 };
+
+function addReplyQuickActions(aiMsgEl) {
+  if (!aiMsgEl || aiMsgEl.querySelector(".reply-actions")) return;
+  const wrap = document.createElement("div");
+  wrap.className = "reply-actions";
+  wrap.innerHTML = `
+    <button class="reply-action-btn" data-qact="copy">Copy</button>
+    <button class="reply-action-btn" data-qact="regen">Regenerate</button>
+    <button class="reply-action-btn" data-qact="ringkas">Ringkas</button>
+    <button class="reply-action-btn" data-qact="contoh">Kasih Contoh</button>
+  `;
+  aiMsgEl.appendChild(wrap);
+}
+
+async function copyToClipboard(text) {
+  const val = String(text || "").trim();
+  if (!val) return false;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(val);
+      return true;
+    }
+  } catch (_) {}
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = val;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return !!ok;
+  } catch (_) {
+    return false;
+  }
+}
+
+function extractLatestUserPrompt() {
+  for (let i = history.length - 1; i >= 0; i--) {
+    const msg = history[i];
+    if (!msg || msg.role !== "user") continue;
+    if (typeof msg.content === "string" && msg.content.trim()) {
+      return msg.content.trim();
+    }
+    if (Array.isArray(msg.content)) {
+      const txt = msg.content
+        .filter((p) => p?.type === "text" && typeof p.text === "string")
+        .map((p) => p.text.trim())
+        .filter(Boolean)
+        .join("\n");
+      if (txt) return txt;
+    }
+  }
+  return "";
+}
+
+window.runQuickAction = async (action, sourceBtn = null) => {
+  if (action === "copy") {
+    const text = sourceBtn
+      ?.closest(".msg.ai")
+      ?.querySelector(".bubble")
+      ?.textContent?.trim();
+    const copied = await copyToClipboard(text);
+    window.showAlert(copied ? "Jawaban berhasil dicopy" : "Gagal copy jawaban");
+    return;
+  }
+  if (action === "regen") {
+    const latestPrompt = extractLatestUserPrompt();
+    if (!latestPrompt) {
+      window.showAlert("Belum ada prompt user buat di-regenerate");
+      return;
+    }
+    const input = document.getElementById("uIn");
+    if (!input) return;
+    input.value = latestPrompt;
+    window.autoResizeTA(input);
+    window.updatePlaceholder();
+    await window.askAI();
+    return;
+  }
+  const prompts = {
+    ringkas: "Ringkas jawaban terakhir jadi 3 poin inti yang paling penting.",
+    contoh: "Kasih 2 contoh praktis dari jawaban terakhir biar gampang dipraktekin.",
+  };
+  const nextPrompt = prompts[action];
+  if (!nextPrompt) return;
+  const input = document.getElementById("uIn");
+  if (!input) return;
+  input.value = nextPrompt;
+  input.focus();
+  window.autoResizeTA(input);
+  window.updatePlaceholder();
+  window.askAI();
+};
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest(".reply-action-btn");
+  if (!btn) return;
+  window.runQuickAction(btn.dataset.qact, btn);
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  ensureAiPresenceChip();
+  window.setAiPresence("ready");
+  applyDynamicWelcome();
+});
 
 function addBubble(role, text, id = "") {
   const box = document.getElementById("chatBox");
@@ -672,18 +840,8 @@ window.processAuth = async () => {
       await updateProfile(cred.user, {
         displayName: document.getElementById("regName")?.value,
       });
-      try {
-        await sendEmailVerification(cred.user);
-      } catch (_) {
-        // keep register success even if verification email is delayed/rate-limited
-      }
-      await signOut(auth);
-      window.showCoolPopup(
-        "Pendaftaran Berhasil",
-        "Akun sudah jadi. Email verifikasi sudah dikirim, cek inbox atau folder spam ya Rek.",
-      );
-      window.showAlert("Daftar berhasil! Silakan login.", "success");
-      window.openAuth("login");
+      window.showAlert("Daftar berhasil! Selamat datang King 🔥", "success");
+      window.closeModal();
     } else if (window.mode === "reset") {
       await sendPasswordResetEmail(auth, email);
       window.showAlert(
@@ -879,11 +1037,13 @@ onAuthStateChanged(auth, (user) => {
     if (sideEmail) sideEmail.textContent = user.email;
     if (sideAvatar) sideAvatar.src = photo;
     updateSidebarState(user);
+    applyDynamicWelcome();
   } else {
     if (trigger)
       trigger.innerHTML = `<button class="icon-btn" onclick="window.toggleSidebar()"><span class="material-symbols-rounded" style="font-size:26px">account_circle</span></button>`;
     if (wt) wt.textContent = "Halo User Tercinta";
     updateSidebarState(null);
+    applyDynamicWelcome();
   }
 });
 
