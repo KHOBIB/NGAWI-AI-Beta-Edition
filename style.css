@@ -3926,6 +3926,13 @@ input[type="range"].vol-slider::-moz-range-thumb {
   justify-content: center;
   gap: 6px;
 }
+.voice-manual-note {
+  margin-top: 10px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text2);
+  text-align: left;
+}
 
 .p-card {
   position: relative;

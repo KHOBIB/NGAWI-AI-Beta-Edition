@@ -525,62 +525,120 @@ function setBtnLoading(id, on) {
   document.getElementById(id)?.classList[on ? "add" : "remove"]("loading");
 }
 
-function pickVoiceForCurrentStyle() {
-  const synth = window.speechSynthesis;
-  if (!synth) return null;
-  const voices = synth.getVoices() || [];
-  if (!voices.length) return null;
-  const idVoices = voices.filter((v) => /id[-_]?id|indonesia/i.test(v.lang || ""));
-  const list = idVoices.length ? idVoices : voices;
-  if (currentVoiceStyle === "formal") {
-    return (
-      list.find((v) => /male|andika|dimas|aditya|fajar/i.test(v.name || "")) ||
-      list[0]
-    );
+const voiceApiProfiles = {
+  mentor: {
+    voice: "alloy",
+    instructions:
+      "Gunakan Bahasa Indonesia yang natural, lembut, jelas, ritme sedang, intonasi mentor yang hangat dan menenangkan.",
+  },
+  santai: {
+    voice: "nova",
+    instructions:
+      "Gunakan Bahasa Indonesia santai, ramah, hangat, ekspresif ringan, tidak kaku, tetap jelas.",
+  },
+  formal: {
+    voice: "onyx",
+    instructions:
+      "Gunakan Bahasa Indonesia formal profesional, artikulasi jelas, tenang, elegan, tidak terburu-buru.",
+  },
+};
+
+let currentVoiceAudio = null;
+
+function normalizeSpeechText(text, styleKey) {
+  let v = String(text || "")
+    .replace(/\s+/g, " ")
+    .replace(/\n+/g, ". ")
+    .trim();
+  if (styleKey === "formal") {
+    v = v.replace(/[:;]/g, ", ").replace(/!/g, ".");
+  } else if (styleKey === "santai") {
+    v = v.replace(/\./g, "... ");
   }
-  if (currentVoiceStyle === "santai") {
-    return (
-      list.find((v) => /female|siti|vina|sarah|ana/i.test(v.name || "")) ||
-      list[0]
-    );
-  }
-  return list[0];
+  return v;
 }
 
 window.stopVoiceClone = () => {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  if (currentVoiceAudio) {
+    try {
+      currentVoiceAudio.pause();
+      if (currentVoiceAudio.src?.startsWith("blob:")) {
+        URL.revokeObjectURL(currentVoiceAudio.src);
+      }
+      currentVoiceAudio.removeAttribute("src");
+      currentVoiceAudio.load();
+    } catch (_) {}
+    currentVoiceAudio = null;
+  }
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
   currentSpeechUtterance = null;
 };
 
-window.speakTextWithVoiceClone = (text) => {
-  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
-    window.showAlert("Browser belum dukung voice clone di device ini");
-    return;
+async function speakWithBrowserFallback(text) {
+  if (
+    !("speechSynthesis" in window) ||
+    typeof SpeechSynthesisUtterance === "undefined"
+  ) {
+    throw new Error("Browser speech tidak tersedia");
   }
-  const val = String(text || "").trim();
+  window.stopVoiceClone();
+  const preset = voiceStylePresets[currentVoiceStyle] || voiceStylePresets.mentor;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = "id-ID";
+  utter.rate = preset.rate;
+  utter.pitch = preset.pitch;
+  utter.volume = preset.volume;
+  currentSpeechUtterance = utter;
+  window.speechSynthesis.speak(utter);
+}
+
+window.speakTextWithVoiceClone = async (text) => {
+  const val = normalizeSpeechText(text, currentVoiceStyle);
   if (!val) {
     window.showAlert("Teks kosong, belum ada yang dibacain");
     return;
   }
   window.stopVoiceClone();
-  const preset = voiceStylePresets[currentVoiceStyle] || voiceStylePresets.mentor;
-  const utter = new SpeechSynthesisUtterance(val);
-  const voice = pickVoiceForCurrentStyle();
-  if (voice) utter.voice = voice;
-  utter.lang = (voice && voice.lang) || "id-ID";
-  utter.rate = preset.rate;
-  utter.pitch = preset.pitch;
-  utter.volume = preset.volume;
-  utter.onend = () => {
-    currentSpeechUtterance = null;
-  };
-  utter.onerror = () => {
-    currentSpeechUtterance = null;
-    window.showAlert("Gagal memutar suara. Coba lagi ya");
-  };
-  currentSpeechUtterance = utter;
-  window.speechSynthesis.speak(utter);
+  const profile = voiceApiProfiles[currentVoiceStyle] || voiceApiProfiles.mentor;
+  try {
+    const res = await fetch("/api/tts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        text: val,
+        style: currentVoiceStyle,
+        voice: profile.voice,
+        instructions: profile.instructions,
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      throw new Error(errText || `HTTP ${res.status}`);
+    }
+    const blob = await res.blob();
+    if (!blob || blob.size < 1000) throw new Error("Audio kosong");
+    const audioUrl = URL.createObjectURL(blob);
+    const audio = new Audio(audioUrl);
+    audio.preload = "auto";
+    audio.onended = () => {
+      if (audio.src?.startsWith("blob:")) URL.revokeObjectURL(audio.src);
+      if (currentVoiceAudio === audio) currentVoiceAudio = null;
+    };
+    audio.onerror = () => {
+      if (audio.src?.startsWith("blob:")) URL.revokeObjectURL(audio.src);
+      if (currentVoiceAudio === audio) currentVoiceAudio = null;
+      window.showAlert("Audio API gagal diputar");
+    };
+    currentVoiceAudio = audio;
+    await audio.play();
+  } catch (apiErr) {
+    try {
+      await speakWithBrowserFallback(val);
+      window.showAlert("TTS API gagal, pakai suara browser sementara", "success");
+    } catch (_) {
+      window.showAlert("Voice API gagal. Cek API key TTS di server.");
+    }
+  }
 };
 
 function syncVoiceStyleCards() {
