@@ -27,6 +27,11 @@ const app = initializeApp({
 });
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+const API_BASE_URL = String(window.__NGAWI_API_BASE_URL__ || "").replace(
+  /\/$/,
+  "",
+);
+const apiUrl = (path) => (API_BASE_URL ? `${API_BASE_URL}${path}` : path);
 
 /* ── Personalities ── */
 const personalities = {
@@ -601,7 +606,7 @@ window.speakTextWithVoiceClone = async (text) => {
   window.stopVoiceClone();
   const profile = voiceApiProfiles[currentVoiceStyle] || voiceApiProfiles.mentor;
   try {
-    const res = await fetch("/api/tts", {
+    const res = await fetch(apiUrl("/api/tts"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -914,7 +919,7 @@ window.askAI = async () => {
       });
       // Only add <br> if there's already text content
       const separator = displayHtml.trim() ? "<br>" : "";
-      displayHtml += `${separator}<div class="chat-image-wrap"><img src="${imgBase64}" class="chat-sent-img" onclick="window.openImageViewer('${imgBase64}')"></div>`;
+      displayHtml += `${separator}<div class="chat-image-wrap"><img src="${imgBase64}" class="chat-sent-img" loading="lazy" decoding="async" onclick="window.openImageViewer('${imgBase64}')"></div>`;
     });
 
     addBubble("user", displayHtml);
@@ -957,7 +962,7 @@ window.askAI = async () => {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 40000);
       try {
-        const res = await fetch("/api/chat", {
+        const res = await fetch(apiUrl("/api/chat"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
@@ -1486,7 +1491,7 @@ onAuthStateChanged(auth, (user) => {
       user.photoURL ||
       "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
     if (trigger)
-      trigger.innerHTML = `<img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer;box-shadow:0 0 12px var(--glow);transition:transform .2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.toggleSidebar()" />`;
+      trigger.innerHTML = `<img src="${photo}" loading="lazy" decoding="async" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer;box-shadow:0 0 12px var(--glow);transition:transform .2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.toggleSidebar()" />`;
     if (wt) wt.textContent = `Halo ${name}`;
     const sideName = document.getElementById("sideName");
     const sideEmail = document.getElementById("sideEmail");
@@ -1566,7 +1571,7 @@ window.saveProfile = async () => {
           "⏳ Uploading foto ke ImgBB...";
         const formData = new FormData();
         formData.append("image", selectedPhotoFile);
-        const res = await fetch("/api/upload", {
+        const res = await fetch(apiUrl("/api/upload"), {
           method: "POST",
           body: formData,
         });
@@ -1598,7 +1603,7 @@ window.saveProfile = async () => {
     if (sideName) sideName.textContent = newName;
     if (sideAvatar) sideAvatar.src = photo;
     if (trigger)
-      trigger.innerHTML = `<img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer;box-shadow:0 0 12px var(--glow);transition:transform .2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.toggleSidebar()" />`;
+      trigger.innerHTML = `<img src="${photo}" loading="lazy" decoding="async" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--accent);cursor:pointer;box-shadow:0 0 12px var(--glow);transition:transform .2s" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" onclick="window.toggleSidebar()" />`;
     document.getElementById("photoStatus").textContent = "";
     window.showAlert("Profil berhasil diupdate King! 🔥", "success");
     window.closeEditProfile();
@@ -2619,14 +2624,22 @@ window.applyCrop = function () {
     if (tt && durationLabel !== lastRenderedDurationLabel) tt.textContent = durationLabel;
     lastRenderedCurrentSecond = currentSecond;
     lastRenderedDurationLabel = durationLabel;
-    if (syncedLines.length > 0) {
-      const currentTime = audio.currentTime;
+    const lyricLineEls = document.querySelectorAll(
+      "#lyricsContainer .lyrics-content .lyrics-line",
+    );
+    if (lyricLineEls.length > 0) {
       let activeIdx = -1;
-      for (let i = syncedLines.length - 1; i >= 0; i--) {
-        if (currentTime >= syncedLines[i].time) {
-          activeIdx = i;
-          break;
+      if (syncedLines.length > 0) {
+        const currentTime = audio.currentTime;
+        for (let i = syncedLines.length - 1; i >= 0; i--) {
+          if (currentTime >= syncedLines[i].time) {
+            activeIdx = i;
+            break;
+          }
         }
+      } else {
+        const ratioClamped = Math.max(0, Math.min(1, ratio));
+        activeIdx = Math.floor(ratioClamped * Math.max(0, lyricLineEls.length - 1));
       }
       if (activeIdx !== lastActiveLine) {
         lastActiveLine = activeIdx;
@@ -2648,6 +2661,24 @@ window.applyCrop = function () {
       tt.textContent = formatTime(audio.duration);
   });
 
+  function getLyricsScrollHost() {
+    const lyricsContainer = document.getElementById("lyricsContainer");
+    const tabLyricsContent = document.getElementById("tabLyricsContent");
+    if (
+      lyricsContainer &&
+      lyricsContainer.scrollHeight > lyricsContainer.clientHeight + 2
+    ) {
+      return lyricsContainer;
+    }
+    if (
+      tabLyricsContent &&
+      tabLyricsContent.scrollHeight > tabLyricsContent.clientHeight + 2
+    ) {
+      return tabLyricsContent;
+    }
+    return lyricsContainer || tabLyricsContent || null;
+  }
+
   function updateLyricsHighlight(activeIdx) {
     const lyricsContent = document.querySelector(
       "#lyricsContainer .lyrics-content",
@@ -2664,25 +2695,55 @@ window.applyCrop = function () {
     const isLyricsTabActive = sideCol?.dataset.activeTab === "lyrics";
     if (!isLyricsTabActive) return;
     // Mobile: jangan auto-scroll kalau tab panel belum kebuka (biar gak "nyeret" UI)
-    const isDesktop = window.innerWidth >= 1025;
+    const isDesktop = window.innerWidth >= 601;
     if (!isDesktop && sideCol && !sideCol.classList.contains("mobile-open"))
       return;
     if (activeIdx >= 0 && activeIdx < lines.length) {
       const activeLine = lines[activeIdx];
-      const container = document.getElementById("lyricsContainer");
+      const container = getLyricsScrollHost();
       if (container && activeLine) {
         // Extra safety: kalau element lyrics content lagi "disembunyiin" via pointer-events (desktop slide),
         // skip scroll biar gak bikin layout aneh di tab lain.
         const pe = window.getComputedStyle(container).pointerEvents;
         if (pe === "none") return;
+        const hostRect = container.getBoundingClientRect();
+        const lineRect = activeLine.getBoundingClientRect();
         const targetTop =
-          activeLine.offsetTop - container.clientHeight / 2 + activeLine.clientHeight / 2;
+          container.scrollTop +
+          (lineRect.top - hostRect.top) -
+          container.clientHeight / 2 +
+          lineRect.height / 2;
+        const prefersReducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
         container.scrollTo({
           top: Math.max(0, targetTop),
-          behavior: isDesktop ? "smooth" : "auto",
+          behavior: prefersReducedMotion ? "auto" : "smooth",
         });
       }
     }
+  }
+
+  function refreshLyricsAutoScroll() {
+    const lyricLineEls = document.querySelectorAll(
+      "#lyricsContainer .lyrics-content .lyrics-line",
+    );
+    if (!lyricLineEls.length) return;
+    let activeIdx = -1;
+    if (syncedLines.length) {
+      const currentTime = audio.currentTime || 0;
+      for (let i = syncedLines.length - 1; i >= 0; i--) {
+        if (currentTime >= syncedLines[i].time) {
+          activeIdx = i;
+          break;
+        }
+      }
+    } else if (audio.duration && isFinite(audio.duration)) {
+      const ratio = Math.max(0, Math.min(1, (audio.currentTime || 0) / audio.duration));
+      activeIdx = Math.floor(ratio * Math.max(0, lyricLineEls.length - 1));
+    }
+    lastActiveLine = activeIdx;
+    window.requestAnimationFrame(() => updateLyricsHighlight(activeIdx));
   }
 
   function bindLyricsSeekInteractions(isSynced) {
@@ -2840,7 +2901,7 @@ window.applyCrop = function () {
 
   /* ── Update active state of tab buttons ── */
   function _updateTabBtnStates() {
-    const isDesktop = window.innerWidth >= 1025;
+    const isDesktop = window.innerWidth >= 601;
     const sideCol = document.getElementById("mpSideCol");
 
     const qBtn = document.getElementById("tabQueueBtn");
@@ -2875,7 +2936,7 @@ window.applyCrop = function () {
   /* ── Tab switcher ── */
   window.switchMusicTab = function (tab) {
     const sideCol = document.getElementById("mpSideCol");
-    const isDesktop = window.innerWidth >= 1025;
+    const isDesktop = window.innerWidth >= 601;
     const trackName = window._currentTrackName;
     if (!sideCol) return;
 
@@ -2884,6 +2945,7 @@ window.applyCrop = function () {
       _syncTabContentState(tab);
       if (tab === "lyrics") {
         if (trackName && !window._lyricsLoaded) window.fetchLyrics(trackName);
+        else refreshLyricsAutoScroll();
       }
     } else {
       currentMobileTab = tab;
@@ -2893,6 +2955,7 @@ window.applyCrop = function () {
       _showBackdrop();
       if (tab === "lyrics" && trackName && !window._lyricsLoaded)
         window.fetchLyrics(trackName);
+      else if (tab === "lyrics") refreshLyricsAutoScroll();
     }
     _updateTabBtnStates();
   };
@@ -2927,7 +2990,7 @@ window.applyCrop = function () {
     sideCol.addEventListener(
       "touchend",
       (e) => {
-        if (!tracking || window.innerWidth >= 1025) return;
+        if (!tracking || window.innerWidth >= 601) return;
         tracking = false;
         if (!allowSwipeSwitch) return;
         if (!sideCol.classList.contains("mobile-open")) return;
@@ -2984,7 +3047,7 @@ window.applyCrop = function () {
   window.addEventListener("resize", () => {
     window.clearTimeout(musicLayoutResizeTimer);
     musicLayoutResizeTimer = window.setTimeout(() => {
-      const isDesktop = window.innerWidth >= 1025;
+      const isDesktop = window.innerWidth >= 601;
       const sideCol = document.getElementById("mpSideCol");
       if (isDesktop) {
         if (sideCol) sideCol.classList.remove("mobile-open");
@@ -3133,18 +3196,7 @@ window.applyCrop = function () {
         lyricsContainer.innerHTML = html;
         bindLyricsSeekInteractions(!!syncedLrc && syncedLines.length > 0);
 
-        if (!audio.paused && syncedLines.length > 0) {
-          const currentTime = audio.currentTime;
-          let activeIdx = -1;
-          for (let i = syncedLines.length - 1; i >= 0; i--) {
-            if (currentTime >= syncedLines[i].time) {
-              activeIdx = i;
-              break;
-            }
-          }
-          lastActiveLine = activeIdx;
-          updateLyricsHighlight(activeIdx);
-        }
+        if (!audio.paused) refreshLyricsAutoScroll();
       } else {
         window._lyricsLoaded = false;
         window._lyricsLoadedFor = null;
